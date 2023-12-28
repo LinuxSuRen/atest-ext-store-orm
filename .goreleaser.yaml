@@ -7,8 +7,8 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
-    id: atest-store-git
-    binary: atest-store-git
+    id: atest-store-orm
+    binary: atest-store-orm
     goos:
       - linux
       - windows
@@ -19,7 +19,7 @@ builds:
 archives:
   - name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}"
     builds:
-      - atest-store-git
+      - atest-store-orm
     format_overrides:
       - goos: windows
         format: zip
