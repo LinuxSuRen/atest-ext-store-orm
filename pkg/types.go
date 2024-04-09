@@ -7,6 +7,7 @@ type TestCase struct {
 	Method    string
 	Body      string
 	Header    string
+	Cookie    string
 	Query     string
 	Form      string
 

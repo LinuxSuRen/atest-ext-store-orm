@@ -1,5 +1,5 @@
 /*
-Copyright 2023 API Testing Authors.
+Copyright 2023-2024 API Testing Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ func ConverToDBTestCase(testcase *server.TestCase) (result *TestCase) {
 		result.Method = request.Method
 		result.Body = request.Body
 		result.Header = pairToJSON(request.Header)
+		result.Cookie = pairToJSON(request.Cookie)
 		result.Form = pairToJSON(request.Form)
 		result.Query = pairToJSON(request.Query)
 	}
@@ -58,6 +59,7 @@ func ConvertToRemoteTestCase(testcase *TestCase) (result *server.TestCase) {
 			Method: testcase.Method,
 			Body:   testcase.Body,
 			Header: jsonToPair(testcase.Header),
+			Cookie: jsonToPair(testcase.Cookie),
 			Query:  jsonToPair(testcase.Query),
 			Form:   jsonToPair(testcase.Form),
 		},

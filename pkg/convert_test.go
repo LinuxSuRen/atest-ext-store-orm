@@ -75,6 +75,7 @@ func TestConverToDBTestCase(t *testing.T) {
 				Method: "get",
 				Body:   "body",
 				Header: samplePairs,
+				Cookie: samplePairs,
 				Query:  samplePairs,
 				Form:   samplePairs,
 			},
@@ -84,6 +85,7 @@ func TestConverToDBTestCase(t *testing.T) {
 			Method: "get",
 			Body:   "body",
 			Header: sampleJSONMap,
+			Cookie: sampleJSONMap,
 			Query:  sampleJSONMap,
 			Form:   sampleJSONMap,
 		}, result)
