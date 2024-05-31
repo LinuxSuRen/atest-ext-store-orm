@@ -17,7 +17,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.0.0
+        uses: actions/checkout@v3.6.0
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - name: Set output
         id: vars
         run: echo "tag=$(git describe --tags)" >> $GITHUB_OUTPUT
@@ -36,8 +39,9 @@ jobs:
         if: github.ref != 'refs/heads/master'
         run: |
           export TAG=${{ steps.vars.outputs.tag }}
-          oras push ${{ env.REGISTRY_DOCKERHUB }}/linuxsuren/atest-ext-store-orm:${TAG#v} dist
-          oras push ${{ env.REGISTRY }}/linuxsuren/atest-ext-store-orm:${TAG#v} dist
+          cd dist
+          oras push ${{ env.REGISTRY_DOCKERHUB }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
+          oras push ${{ env.REGISTRY }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
 
   image:
     runs-on: ubuntu-20.04
