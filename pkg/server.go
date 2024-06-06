@@ -1,5 +1,5 @@
 /*
-Copyright 2023 API Testing Authors.
+Copyright 2023-2024 API Testing Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,7 +52,10 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		dialector = mysql.Open(dsn)
 	case "postgres":
 		obj := strings.Split(address, ":")
-		host, port := obj[0], obj[1]
+		host, port := obj[0], "5432"
+		if len(obj) > 1 {
+			port = obj[1]
+		}
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, database, port)
 		dialector = postgres.Open(dsn)
 	default:
@@ -252,10 +255,10 @@ func (s *dbserver) DeleteTestCase(ctx context.Context, testcase *server.TestCase
 }
 
 func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.ExtensionStatus, err error) {
-	db, clientErr := s.getClient(ctx)
+	_, vErr := s.ListTestSuite(ctx, in)
 	reply = &server.ExtensionStatus{
-		Ready:   err == nil && db != nil,
-		Message: util.OKOrErrorMessage(clientErr),
+		Ready:   vErr == nil,
+		Message: util.OKOrErrorMessage(vErr),
 		Version: version.GetVersion(),
 	}
 	return
