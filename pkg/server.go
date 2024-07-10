@@ -117,6 +117,10 @@ func (s *dbserver) ListTestSuite(ctx context.Context, _ *server.Empty) (suites *
 	suites = &remote.TestSuites{}
 	for i := range items {
 		suites.Data = append(suites.Data, ConvertToGRPCTestSuite(items[i]))
+
+		if suiteWithCases, dErr := s.GetTestSuite(ctx, ConvertToGRPCTestSuite(items[i])); dErr == nil {
+			suites.Data[i] = suiteWithCases
+		}
 	}
 	return
 }

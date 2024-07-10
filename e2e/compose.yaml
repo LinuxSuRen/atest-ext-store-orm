@@ -1,0 +1,39 @@
+version: '3.1'
+services:
+  testing:
+    image: ghcr.io/linuxsuren/api-testing:master
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - type: volume
+        source: cache
+        target: /var/data
+    links:
+      - mysql
+  extension:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        - "GO_BUILDER=ghcr.io/linuxsuren/library/golang:1.20"
+        - "BASE_IMAGE=ghcr.io/linuxsuren/library/alpine:3.12"
+    volumes:
+      - type: volume
+        source: cache
+        target: /var/data
+  mysql:
+    image: mysql:8.2.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: atest
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/3306"]
+      interval: 3s
+      timeout: 60s
+      retries: 10
+      start_period: 3s
+
+volumes:
+  cache:
