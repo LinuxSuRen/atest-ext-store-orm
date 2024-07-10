@@ -13,3 +13,5 @@ hd:
 init-env: hd
 	hd i cli/cli
 	gh extension install linuxsuren/gh-dev
+run-e2e:
+	cd e2e && ./start.sh

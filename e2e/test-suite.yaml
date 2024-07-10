@@ -1,0 +1,368 @@
+#!api-testing
+# yaml-language-server: $schema=https://linuxsuren.github.io/api-testing/api-testing-schema.json
+name: atest
+api: |
+  {{default "http://localhost:8080" (env "SERVER")}}/api/v1
+param:
+  suiteName: "{{randAlpha 6}}"
+  caseName: "{{randAlpha 6}}"
+  gRPCSuiteName: "{{randAlpha 6}}"
+  gRPCCaseName: "{{randAlpha 6}}"
+  store: "{{randAlpha 3}}"
+  server: |
+    {{default "http://localhost:8080" (env "SERVER")}}
+items:
+- name: CreateStore
+  before:
+    items:
+      - httpReady("{{.param.server}}/healthz", 2400)
+  request:
+    api: /stores
+    method: POST
+    body: |
+      {
+        "name": "{{.param.store}}",
+        "url": "{{env "target"}}",
+        "username": "{{default "root" (env "username")}}",
+        "password": "{{default "root" (env "password")}}",
+        "kind": {
+          "name": "atest-store-{{env "kind"}}"
+        },
+        "properties": [{
+          "key": "driver",
+          "value": "{{default "mysql" (env "driver")}}"
+        }, {
+          "key": "database",
+          "value": "{{default "atest" (env "dbname")}}"
+        }, {
+          "key": "bucket",
+          "value": "bucket"
+        }, {
+          "key": "region",
+          "value": "cn"
+        }, {
+          "key": "disablessl",
+          "value": "true"
+        }, {
+          "key": "targetPath",
+          "value": "api-testing"
+        }]
+      }
+- name: createSuite
+  before:
+    items:
+      - sleep(3)
+  request:
+    api: /suites
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.suiteName}}",
+        "api": "http://localhost:8080/server.Runner"
+      }
+- name: updateSuite
+  request:
+    api: /suites/{{.param.suiteName}}
+    method: PUT
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.suiteName}}",
+        "api": "http://localhost:8080/server.Runner",
+        "param": [{
+          "name": "name",
+          "value": "linuxsuren"
+        }]
+      }
+- name: getSuite
+  request:
+    api: /suites/{{.param.suiteName}}
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.suiteName}}"
+      }
+  expect:
+    bodyFieldsExpect:
+      api: http://localhost:8080/server.Runner
+- name: duplicateSuite
+  request:
+    api: /suites/{{.param.suiteName}}/duplicate
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "sourceSuiteName": "{{.param.suiteName}}",
+        "targetSuiteName": "{{.param.suiteName}}-copy"
+      }
+- name: getDuplicatedSuite
+  request:
+    api: /suites/{{.param.suiteName}}-copy
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.suiteName}}-copy"
+      }
+  expect:
+    bodyFieldsExpect:
+      api: http://localhost:8080/server.Runner
+- name: GetSuggestedAPIs
+  request:
+    api: /suggestedAPIs
+    body: |
+      {
+        "name": "{{.param.suiteName}}"
+      }
+- name: createTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suiteName": "{{.param.suiteName}}",
+        "data": {
+          "name": "{{.param.caseName}}",
+          "request": {
+            "api": "/GetTestSuite",
+            "method": "POST",
+            "header": [{
+              "name": "X-Store-Name",
+              "value": "{{.param.store}}"
+            }]
+          }
+        }
+      }
+- name: updateTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases/{{.param.caseName}}
+    method: PUT
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suiteName": "{{.param.suiteName}}",
+        "data": {
+          "name": "{{.param.caseName}}",
+          "request": {
+            "api": "/GetTestSuite",
+            "method": "POST",
+            "header": [{
+              "name": "X-Store-Name",
+              "value": "{{.param.store}}"
+            }],
+            "body": "good"
+          }
+        }
+      }
+- name: getTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases/{{.param.caseName}}
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suite": "{{.param.suiteName}}",
+        "testcase": "{{.param.caseName}}"
+      }
+  expect:
+    bodyFieldsExpect:
+      request.body: good
+- name: duplicateTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases/{{.param.caseName}}/duplicate
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "sourceSuiteName": "{{.param.suiteName}}",
+        "sourceCaseName": "{{.param.caseName}}",
+        "targetSuiteName": "{{.param.suiteName}}",
+        "targetCaseName": "{{.param.caseName}}-copy"
+      }
+- name: getDuplicatedTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases/{{.param.caseName}}-copy
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suite": "{{.param.suiteName}}",
+        "testcase": "{{.param.caseName}}-copy"
+      }
+  expect:
+    bodyFieldsExpect:
+      request.body: good
+- name: deleteTestCase
+  request:
+    api: /suites/{{.param.suiteName}}/cases/{{.param.caseName}}
+    method: DELETE
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suite": "{{.param.suiteName}}",
+        "testcase": "{{.param.caseName}}"
+      }
+- name: createGRPCSuite
+  request:
+    api: /suites
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.gRPCSuiteName}}",
+        "api": "localhost:7070",
+        "kind": "grpc"
+      }
+- name: createGRPCTestCase
+  request:
+    api: /suites/{{.param.gRPCSuiteName}}/cases
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suiteName": "{{.param.gRPCSuiteName}}",
+        "data": {
+          "name": "{{.param.gRPCCaseName}}",
+          "request": {
+            "api": "/server.Runner/GetSuites",
+            "header": [{
+              "key": "X-Store-Name",
+              "value": "{{.param.store}}"
+            }]
+          }
+        }
+      }
+- name: getGRPCTestCase
+  request:
+    api: /suites/{{.param.gRPCSuiteName}}/cases/{{.param.gRPCCaseName}}
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "suite": "{{.param.gRPCSuiteName}}",
+        "testcase": "{{.param.gRPCCaseName}}"
+      }
+  expect:
+    bodyFieldsExpect:
+      request.header.0.value: "{{.param.store}}"
+# - name: runGRPCTestCase
+#   request:
+#     api: /suites/{{.param.gRPCSuiteName}}/cases/{{.param.gRPCCaseName}}/run"
+#     method: POST
+#     header:
+#       X-Store-Name: "{{.param.store}}"
+#     body: |
+#       {
+#         "suite": "{{.param.gRPCSuiteName}}",
+#         "testcase": "{{.param.gRPCCaseName}}",
+#         "parameters": []
+#       }
+- name: runTestSuite
+  request:
+    api: /run/suite
+    method: POST
+    header:
+      X-Store-Name: "{{.param.store}}"
+    body: |
+      {
+        "name": "{{.param.gRPCSuiteName}}"
+      }
+- name: version
+  request:
+    api: /version
+- name: popularHeaders
+  request:
+    api: /popularHeaders
+  expect:
+    verify:
+      - any(data.data, {.key == "Content-Type"})
+      - any(data.data, {.key == "Authorization"})
+- name: functionsQuery
+  request:
+    api: /functions
+    query:
+      name: rand
+  expect:
+    verify:
+      - any(data.data, {.key == "randNumeric"})
+      - any(data.data, {.key == "randAlpha"})
+      - len(data.data) >= 8
+- name: findUnknownFunction
+  request:
+    api: /functions
+    query:
+      name: "{{randAlpha 8}}"
+  expect:
+    verify:
+      - len(data.data) == 0
+- name: listCodeGenerator
+  request:
+    api: /codeGenerators
+  expect:
+    verify:
+      - any(data.data, {.key == "curl"})
+      - len(data.data) >= 3
+
+## Other
+- name: downloadTool
+  request:
+    api: |
+      {{.param.server}}/get
+  expect:
+    header:
+      Content-Type: application/octet-stream
+      Content-Disposition: attachment; filename=atest
+      Content-Transfer-Encoding: binary
+- name: downloadExtGit
+  request:
+    api: |
+      {{.param.server}}/get
+    query:
+      name: atest-store-git
+  expect:
+    header:
+      Content-Type: application/octet-stream
+      Content-Disposition: attachment; filename=atest-store-git
+      Content-Transfer-Encoding: binary
+- name: oauth
+  request:
+    api: |
+      {{.param.server}}/oauth2/token
+  expect:
+    statusCode: 404
+- name: debugCmdLine
+  request:
+    api: |
+      {{.param.server}}/debug/pprof/cmdline
+- name: favicon
+  request:
+    api: |
+      {{ .param.server }}/favicon.ico
+  expect:
+    header:
+      Content-Type: image/x-icon
+
+## metrics
+- name: metrics
+  request:
+    api: |
+      {{.param.server}}/metrics
+  expect:
+    verify:
+      - indexOf(data, "atest_execution_count") != -1
+      - indexOf(data, "atest_execution_fail") != -1
+      - indexOf(data, "atest_execution_success") != -1
+      - indexOf(data, "atest_runners_count") != -1
+      - indexOf(data, "http_requests_total") != -1
