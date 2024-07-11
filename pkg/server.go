@@ -116,9 +116,11 @@ func (s *dbserver) ListTestSuite(ctx context.Context, _ *server.Empty) (suites *
 	db.Find(&items)
 	suites = &remote.TestSuites{}
 	for i := range items {
-		suites.Data = append(suites.Data, ConvertToGRPCTestSuite(items[i]))
+		suite := ConvertToGRPCTestSuite(items[i])
+		suites.Data = append(suites.Data, suite)
 
-		if suiteWithCases, dErr := s.GetTestSuite(ctx, ConvertToGRPCTestSuite(items[i])); dErr == nil {
+		suite.Full = true
+		if suiteWithCases, dErr := s.GetTestSuite(ctx, suite); dErr == nil {
 			suites.Data[i] = suiteWithCases
 		}
 	}
@@ -182,7 +184,7 @@ func (s *dbserver) DeleteTestSuite(ctx context.Context, suite *remote.TestSuite)
 		return
 	}
 
-	db.Delete(suite, nameQuery, suite.Name)
+	err = db.Delete(TestSuite{}, nameQuery, suite.Name).Error
 	return
 }
 
