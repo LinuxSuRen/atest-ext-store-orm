@@ -31,6 +31,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/driver/sqlite"
 )
 
 type dbserver struct {
@@ -50,6 +51,9 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	case "mysql", "":
 		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", user, password, address, database)
 		dialector = mysql.Open(dsn)
+	case "sqlite":
+		dsn = fmt.Sprintf("%s.db", database)
+		dialector = sqlite.Open(dsn)
 	case "postgres":
 		obj := strings.Split(address, ":")
 		host, port := obj[0], "5432"
