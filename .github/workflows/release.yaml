@@ -13,8 +13,28 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  Test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.22.x
+      - uses: actions/checkout@v3.0.0
+      - name: Unit Test
+        run: |
+          make test
+      - name: Report
+        if: github.actor == 'linuxsuren'
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --force-coverage-parser go -r coverage.out
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final
+
   goreleaser:
     runs-on: ubuntu-20.04
+    if: github.ref != 'refs/heads/master'
     steps:
       - name: Checkout
         uses: actions/checkout@v3.6.0
@@ -29,7 +49,6 @@ jobs:
         with:
           go-version: 1.22.x
       - name: Image Registry Login
-        if: github.ref != 'refs/heads/master'
         run: |
           docker login --username linuxsuren --password ${{secrets.DOCKER_HUB_PUBLISH_SECRETS}}
           docker login ${{ env.REGISTRY }}/linuxsuren --username linuxsuren --password ${{secrets.GH_PUBLISH_SECRETS}}
@@ -41,7 +60,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PUBLISH_SECRETS }}
       - name: Upload via oras
-        if: github.ref != 'refs/heads/master'
         run: |
           export TAG=${{ steps.vars.outputs.tag }}
           cd dist
