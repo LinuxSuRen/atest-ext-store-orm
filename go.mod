@@ -5,7 +5,7 @@ go 1.22.2
 toolchain go1.22.4
 
 require (
-	github.com/linuxsuren/api-testing v0.0.18-0.20240712123625-553bc62434db
+	github.com/linuxsuren/api-testing v0.0.18-0.20240712143814-6ce9363d5a07
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	gorm.io/driver/mysql v1.5.2
