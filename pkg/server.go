@@ -29,9 +29,9 @@ import (
 	"github.com/linuxsuren/api-testing/pkg/version"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"gorm.io/driver/sqlite"
 )
 
 type dbserver struct {
@@ -273,6 +273,16 @@ func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.
 	}
 	return
 }
+
+func (s *dbserver) GetVersion(context.Context, *server.Empty) (ver *server.Version, err error) {
+	ver = &server.Version{
+		Version: version.GetVersion(),
+		Commit:  version.GetCommit(),
+		Date:    version.GetDate(),
+	}
+	return
+}
+
 func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *server.PProfData, err error) {
 	log.Println("pprof", in.Name)
 
