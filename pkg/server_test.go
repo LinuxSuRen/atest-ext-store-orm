@@ -1,5 +1,5 @@
 /*
-Copyright 2023 API Testing Authors.
+Copyright 2023-2024 API Testing Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@ package pkg
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/linuxsuren/api-testing/pkg/server"
+	atest "github.com/linuxsuren/api-testing/pkg/testing"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
 	"github.com/stretchr/testify/assert"
 )
@@ -83,5 +85,102 @@ func TestNewRemoteServer(t *testing.T) {
 		reply, err := remoteServer.Verify(defaultCtx, nil)
 		assert.NoError(t, err)
 		assert.False(t, reply.Ready)
+	})
+}
+
+func TestSQLite(t *testing.T) {
+	remoteServer := NewRemoteServer()
+	assert.NotNil(t, remoteServer)
+	defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
+		Properties: map[string]string{
+			"driver":   "sqlite",
+			"database": "atest",
+		},
+	})
+	defer func() {
+		_ = os.Remove("atest.db")
+	}()
+
+	t.Run("CreateTestSuite", func(t *testing.T) {
+		_, err := remoteServer.CreateTestSuite(defaultCtx, &remote.TestSuite{
+			Name: "test",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("ListTestSuite", func(t *testing.T) {
+		result, err := remoteServer.ListTestSuite(defaultCtx, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+		assert.Equal(t, "test", result.Data[0].Name)
+	})
+
+	t.Run("UpdateTestSuite", func(t *testing.T) {
+		_, err := remoteServer.UpdateTestSuite(defaultCtx, &remote.TestSuite{
+			Name: "test",
+			Api:  "fake",
+		})
+		assert.NoError(t, err)
+
+		var suite *remote.TestSuite
+		suite, err = remoteServer.GetTestSuite(defaultCtx, &remote.TestSuite{
+			Name: "test",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "fake", suite.Api)
+	})
+
+	t.Run("CreateTestCase", func(t *testing.T) {
+		_, err := remoteServer.CreateTestCase(defaultCtx, &server.TestCase{
+			SuiteName: "test",
+			Name:      "test",
+		})
+		assert.NoError(t, err)
+
+		var testcases *server.TestCases
+		testcases, err = remoteServer.ListTestCases(defaultCtx, &remote.TestSuite{
+			Name: "test",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(testcases.Data))
+	})
+
+	t.Run("UpdateTestCase", func(t *testing.T) {
+		_, err := remoteServer.UpdateTestCase(defaultCtx, &server.TestCase{
+			SuiteName: "test",
+			Name:      "test",
+			Request: &server.Request{
+				Api: "api",
+			},
+		})
+		assert.NoError(t, err)
+
+		var testcase *server.TestCase
+		testcase, err = remoteServer.GetTestCase(defaultCtx, &server.TestCase{
+			SuiteName: "test",
+			Name:      "test",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "api", testcase.Request.Api)
+	})
+
+	t.Run("DeleteTestCase", func(t *testing.T) {
+		_, err := remoteServer.DeleteTestCase(defaultCtx, &server.TestCase{
+			SuiteName: "test",
+			Name:      "test",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("DeleteTestSuite", func(t *testing.T) {
+		_, err := remoteServer.DeleteTestSuite(defaultCtx, &remote.TestSuite{
+			Name: "test",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("PProf", func(t *testing.T) {
+		_, err := remoteServer.PProf(defaultCtx, &server.PProfRequest{})
+		assert.NoError(t, err)
 	})
 }
