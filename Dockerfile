@@ -9,7 +9,8 @@ WORKDIR /workspace
 COPY . .
 
 RUN GOPROXY=${GOPROXY} go mod download
-RUN GOPROXY=${GOPROXY} CGO_ENABLED=0 go build -ldflags "-w -s" -o atest-store-orm .
+RUN GOPROXY=${GOPROXY} CGO_ENABLED=0 go build -ldflags "-w -s -X github.com/linuxsuren/api-testing/pkg/version.version=${VERSION}\
+    -X github.com/linuxsuren/api-testing/pkg/version.date=$(date +%Y-%m-%d)" -o atest-store-orm .
 
 FROM ${BASE_IMAGE}
 

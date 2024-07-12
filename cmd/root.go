@@ -17,6 +17,7 @@ package cmd
 
 import (
 	ext "github.com/linuxsuren/api-testing/pkg/extension"
+	"github.com/linuxsuren/api-testing/pkg/version"
 	"github.com/linuxsuren/atest-ext-store-orm/pkg"
 	"github.com/spf13/cobra"
 )
@@ -31,10 +32,16 @@ func NewRootCommand() (c *cobra.Command) {
 		RunE:  opt.runE,
 	}
 	opt.AddFlags(c.Flags())
+	c.Flags().BoolVarP(&opt.version, "version", "", false, "Print the version then exit")
 	return
 }
 
 func (o *option) runE(c *cobra.Command, args []string) (err error) {
+	if o.version {
+		c.Println(version.GetVersion())
+		c.Println(version.GetDate())
+		return
+	}
 	remoteServer := pkg.NewRemoteServer()
 	err = ext.CreateRunner(o.Extension, c, remoteServer)
 	return
@@ -42,4 +49,5 @@ func (o *option) runE(c *cobra.Command, args []string) (err error) {
 
 type option struct {
 	*ext.Extension
+	version bool
 }

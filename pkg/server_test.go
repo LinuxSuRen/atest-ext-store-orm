@@ -86,6 +86,43 @@ func TestNewRemoteServer(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, reply.Ready)
 	})
+
+	t.Run("invalid orm driver", func(t *testing.T) {
+		remoteServer := NewRemoteServer()
+		assert.NotNil(t, remoteServer)
+		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
+			Properties: map[string]string{
+				"driver": "invalid",
+			},
+		})
+		_, err := remoteServer.ListTestSuite(defaultCtx, &server.Empty{})
+		assert.Error(t, err)
+	})
+
+	t.Run("invalid mysql config", func(t *testing.T) {
+		remoteServer := NewRemoteServer()
+		assert.NotNil(t, remoteServer)
+		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
+			Properties: map[string]string{
+				"driver": "mysql",
+			},
+		})
+		_, err := remoteServer.ListTestSuite(defaultCtx, &server.Empty{})
+		assert.Error(t, err)
+	})
+
+	t.Run("invalid postgres config", func(t *testing.T) {
+		remoteServer := NewRemoteServer()
+		assert.NotNil(t, remoteServer)
+		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
+			Properties: map[string]string{
+				"driver": "postgres",
+			},
+			URL: "0.0.0.0:-123",
+		})
+		_, err := remoteServer.ListTestSuite(defaultCtx, &server.Empty{})
+		assert.Error(t, err)
+	})
 }
 
 func TestSQLite(t *testing.T) {
@@ -181,6 +218,11 @@ func TestSQLite(t *testing.T) {
 
 	t.Run("PProf", func(t *testing.T) {
 		_, err := remoteServer.PProf(defaultCtx, &server.PProfRequest{})
+		assert.NoError(t, err)
+	})
+
+	t.Run("GetVersion", func(t *testing.T) {
+		_, err := remoteServer.GetVersion(defaultCtx, &server.Empty{})
 		assert.NoError(t, err)
 	})
 }
