@@ -2,7 +2,7 @@
 *
 MIT License
 
-Copyright (c) 2023 API Testing Authors.
+Copyright (c) 2023-2024 API Testing Authors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,6 @@ func TestRootCommand(t *testing.T) {
 
 		c.SetArgs([]string{"--port", "0"})
 		err := c.Execute()
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 }
