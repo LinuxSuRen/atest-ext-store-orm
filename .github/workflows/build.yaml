@@ -15,6 +15,13 @@ jobs:
       - name: Unit Test
         run: |
           make test
+      - name: Report
+        if: github.actor == 'linuxsuren'
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --force-coverage-parser go -r coverage.out
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final
 
   Build:
     runs-on: ubuntu-20.04
