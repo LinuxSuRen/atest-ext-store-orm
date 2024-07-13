@@ -10,6 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   REGISTRY_DOCKERHUB: docker.io
+  REGISTRY_ALIYUN: registry.aliyuncs.com
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -52,6 +53,7 @@ jobs:
         run: |
           docker login --username linuxsuren --password ${{secrets.DOCKER_HUB_PUBLISH_SECRETS}}
           docker login ${{ env.REGISTRY }}/linuxsuren --username linuxsuren --password ${{secrets.GH_PUBLISH_SECRETS}}
+          docker login ${{ env.REGISTRY_ALIYUN }}/linuxsuren --username ${{ secrets.REGISTRY_ALIYUN_USER }} --password ${{secrets.REGISTRY_ALIYUN_PUBLISH_SECRETS}}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -65,6 +67,7 @@ jobs:
           cd dist
           oras push ${{ env.REGISTRY_DOCKERHUB }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
           oras push ${{ env.REGISTRY }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
+          oras push ${{ env.REGISTRY_ALIYUN }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
 
   image:
     runs-on: ubuntu-20.04
