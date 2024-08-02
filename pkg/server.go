@@ -19,9 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"strings"
-
 	"github.com/linuxsuren/api-testing/pkg/extension"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
@@ -32,6 +29,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"log"
+	"strings"
 )
 
 type dbserver struct {
@@ -49,7 +48,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dsn string
 	switch driver {
 	case "mysql", "":
-		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", user, password, address, database)
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=true", user, password, address, database)
 		dialector = mysql.Open(dsn)
 	case "sqlite":
 		dsn = fmt.Sprintf("%s.db", database)
@@ -78,6 +77,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 
 	db.AutoMigrate(&TestCase{})
 	db.AutoMigrate(&TestSuite{})
+	db.AutoMigrate(&HistoryTestResult{})
 	return
 }
 
@@ -165,6 +165,19 @@ func (s *dbserver) GetTestSuite(ctx context.Context, suite *remote.TestSuite) (r
 	return
 }
 
+func (s *dbserver) GetHistoryTestSuite(ctx context.Context, suite *remote.HistoryTestSuite) (reply *remote.HistoryTestSuite, err error) {
+	query := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	db.Find(&query, nameQuery, suite.HistorySuiteName)
+
+	reply = ConvertToGRPCHistoryTestSuite(query)
+	return
+}
+
 func (s *dbserver) UpdateTestSuite(ctx context.Context, suite *remote.TestSuite) (reply *remote.TestSuite, err error) {
 	reply = &remote.TestSuite{}
 	input := ConvertToDBTestSuite(suite)
@@ -218,6 +231,47 @@ func (s *dbserver) CreateTestCase(ctx context.Context, testcase *server.TestCase
 	return
 }
 
+func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult *server.HistoryTestResult) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
+	return
+}
+
+func (s *dbserver) ListHistoryTestSuite(ctx context.Context, _ *server.Empty) (suites *remote.HistoryTestSuites, err error) {
+	items := make([]*HistoryTestResult, 0)
+
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	db.Find(&items)
+
+	groupedItems := make(map[string][]*HistoryTestResult)
+	for _, item := range items {
+		groupedItems[item.HistorySuiteName] = append(groupedItems[item.HistorySuiteName], item)
+	}
+
+	suites = &remote.HistoryTestSuites{}
+
+	for historySuiteName, group := range groupedItems {
+		suite := &remote.HistoryTestSuite{
+			HistorySuiteName: historySuiteName,
+		}
+		for _, item := range group {
+			converted := ConvertToGRPCHistoryTestSuite(item)
+			suite.Items = append(suite.Items, converted.Items[0])
+		}
+		suites.Data = append(suites.Data, suite)
+	}
+	return
+}
+
 func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (result *server.TestCase, err error) {
 	item := &TestCase{}
 	var db *gorm.DB
@@ -227,6 +281,18 @@ func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (
 	db.Find(&item, "suite_name = ? AND name = ?", testcase.SuiteName, testcase.Name)
 
 	result = ConvertToRemoteTestCase(item)
+	return
+}
+
+func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestResult, err error) {
+	item := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&item, "id = ? ", testcase.ID)
+
+	result = ConvertToRemoteHistoryTestResult(item)
 	return
 }
 
@@ -274,14 +340,14 @@ func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.
 	return
 }
 
-func (s *dbserver) GetVersion(context.Context, *server.Empty) (ver *server.Version, err error) {
-	ver = &server.Version{
-		Version: version.GetVersion(),
-		Commit:  version.GetCommit(),
-		Date:    version.GetDate(),
-	}
-	return
-}
+// func (s *dbserver) GetVersion(context.Context, *server.Empty) (ver *server.Version, err error) {
+// 	ver = &server.Version{
+// 		Version: version.GetVersion(),
+// 		Commit:  version.GetCommit(),
+// 		Date:    version.GetDate(),
+// 	}
+// 	return
+// }
 
 func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *server.PProfData, err error) {
 	log.Println("pprof", in.Name)
