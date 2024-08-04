@@ -150,37 +150,6 @@ func ConvertToRemoteHistoryTestResult(historyTestResult *HistoryTestResult) (res
 		Message:    historyTestResult.Message,
 		Error:      historyTestResult.Error,
 		CreateTime: timestamppb.New(createTime),
-
-		Data: &server.HistoryTestCase{
-			HistorySuiteName: historyTestResult.HistorySuiteName,
-			CaseName:         historyTestResult.CaseName,
-			CreateTime:       timestamppb.New(createTime),
-			SuiteName:        historyTestResult.SuiteName,
-			SuiteApi:         historyTestResult.SuiteAPI,
-			SuiteParam:       jsonToPair(historyTestResult.Param),
-			SuiteSpec: &server.APISpec{
-				Kind: historyTestResult.SpecKind,
-				Url:  historyTestResult.SpecURL,
-			},
-			Request: &server.Request{
-				Api:    historyTestResult.CaseAPI,
-				Method: historyTestResult.Method,
-				Body:   historyTestResult.Body,
-				Header: jsonToPair(historyTestResult.Header),
-				Cookie: jsonToPair(historyTestResult.Cookie),
-				Query:  jsonToPair(historyTestResult.Query),
-				Form:   jsonToPair(historyTestResult.Form),
-			},
-
-			Response: &server.Response{
-				StatusCode:       int32(historyTestResult.ExpectStatusCode),
-				Body:             historyTestResult.ExpectBody,
-				Schema:           historyTestResult.ExpectSchema,
-				Verify:           jsonToSlice(historyTestResult.ExpectVerify),
-				BodyFieldsExpect: jsonToPair(historyTestResult.ExpectBodyFields),
-				Header:           jsonToPair(historyTestResult.ExpectHeader),
-			},
-		},
 	}
 	TestCaseResult := &server.TestCaseResult{
 		StatusCode: historyTestResult.StatusCode,
@@ -190,6 +159,7 @@ func ConvertToRemoteHistoryTestResult(historyTestResult *HistoryTestResult) (res
 		Header:     jsonToPair(historyTestResult.Header),
 	}
 	result.TestCaseResult = append(result.TestCaseResult, TestCaseResult)
+	result.Data = ConvertToGRPCHistoryTestCase(historyTestResult)
 	return
 }
 
@@ -207,14 +177,21 @@ func ConvertToGRPCTestSuite(suite *TestSuite) (result *remote.TestSuite) {
 }
 
 func ConvertToGRPCHistoryTestSuite(historyTestResult *HistoryTestResult) (result *remote.HistoryTestSuite) {
+	result = &remote.HistoryTestSuite{
+		HistorySuiteName: historyTestResult.HistorySuiteName,
+	}
+
+	item := ConvertToGRPCHistoryTestCase(historyTestResult)
+	result.Items = append(result.Items, item)
+	return
+}
+
+func ConvertToGRPCHistoryTestCase(historyTestResult *HistoryTestResult) (result *server.HistoryTestCase) {
 	createTime, err := time.Parse("2006-01-02T15:04:05.999999999", historyTestResult.CreateTime)
 	if err != nil {
 		fmt.Println("Error parsing time:", err)
 	}
-	result = &remote.HistoryTestSuite{
-		HistorySuiteName: historyTestResult.HistorySuiteName,
-	}
-	item := &server.HistoryTestCase{
+	result = &server.HistoryTestCase{
 		ID:               historyTestResult.ID,
 		SuiteName:        historyTestResult.SuiteName,
 		CaseName:         historyTestResult.CaseName,
@@ -247,7 +224,6 @@ func ConvertToGRPCHistoryTestSuite(historyTestResult *HistoryTestResult) (result
 			Header:           jsonToPair(historyTestResult.ExpectHeader),
 		},
 	}
-	result.Items = append(result.Items, item)
 	return
 }
 

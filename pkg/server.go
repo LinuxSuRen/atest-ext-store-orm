@@ -284,7 +284,7 @@ func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (
 	return
 }
 
-func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestResult, err error) {
+func (s *dbserver) GetHistoryTestCaseWithResult(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestResult, err error) {
 	item := &HistoryTestResult{}
 	var db *gorm.DB
 	if db, err = s.getClient(ctx); err != nil {
@@ -293,6 +293,18 @@ func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.Hist
 	db.Find(&item, "id = ? ", testcase.ID)
 
 	result = ConvertToRemoteHistoryTestResult(item)
+	return
+}
+
+func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestCase, err error) {
+	item := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&item, "id = ? ", testcase.ID)
+
+	result = ConvertToGRPCHistoryTestCase(item)
 	return
 }
 
@@ -330,6 +342,19 @@ func (s *dbserver) DeleteTestCase(ctx context.Context, testcase *server.TestCase
 	return
 }
 
+func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *server.HistoryTestCase) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	input := &HistoryTestResult{
+		ID: historyTestCase.ID,
+	}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	historyTestCaseIdentiy(db, input).Delete(input)
+	return
+}
+
 func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.ExtensionStatus, err error) {
 	_, vErr := s.ListTestSuite(ctx, in)
 	reply = &server.ExtensionStatus{
@@ -360,4 +385,8 @@ func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *se
 
 func testCaseIdentiy(db *gorm.DB, testcase *TestCase) *gorm.DB {
 	return db.Model(testcase).Where(fmt.Sprintf("suite_name = '%s' AND name = '%s'", testcase.SuiteName, testcase.Name))
+}
+
+func historyTestCaseIdentiy(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
+	return db.Model(historyTestResult).Where(fmt.Sprintf("id = '%s'", historyTestResult.ID))
 }
