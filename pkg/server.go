@@ -308,6 +308,21 @@ func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.Hist
 	return
 }
 
+func (s *dbserver) GetTestCaseAllHistory(ctx context.Context, testcase *server.TestCase) (result *server.HistoryTestCases, err error) {
+	items := make([]*HistoryTestResult, 0)
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&items, "suite_name = ? AND case_name = ? ", testcase.SuiteName, testcase.Name)
+
+	result = &server.HistoryTestCases{}
+	for i := range items {
+		result.Data = append(result.Data, ConvertToGRPCHistoryTestCase(items[i]))
+	}
+	return
+}
+
 func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase) (reply *server.TestCase, err error) {
 	reply = &server.TestCase{}
 	input := ConverToDBTestCase(testcase)

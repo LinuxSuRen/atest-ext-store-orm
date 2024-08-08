@@ -79,6 +79,33 @@ func ConvertToRemoteTestCase(testcase *TestCase) (result *server.TestCase) {
 	return
 }
 
+func ConvertHistoryToRemoteTestCase(historyTestcase *HistoryTestResult) (result *server.TestCase) {
+	result = &server.TestCase{
+		Name:      historyTestcase.CaseName,
+		SuiteName: historyTestcase.SuiteName,
+
+		Request: &server.Request{
+			Api:    historyTestcase.CaseAPI,
+			Method: historyTestcase.Method,
+			Body:   historyTestcase.Body,
+			Header: jsonToPair(historyTestcase.Header),
+			Cookie: jsonToPair(historyTestcase.Cookie),
+			Query:  jsonToPair(historyTestcase.Query),
+			Form:   jsonToPair(historyTestcase.Form),
+		},
+
+		Response: &server.Response{
+			StatusCode:       int32(historyTestcase.ExpectStatusCode),
+			Body:             historyTestcase.ExpectBody,
+			Schema:           historyTestcase.ExpectSchema,
+			Verify:           jsonToSlice(historyTestcase.ExpectVerify),
+			BodyFieldsExpect: jsonToPair(historyTestcase.ExpectBodyFields),
+			Header:           jsonToPair(historyTestcase.ExpectHeader),
+		},
+	}
+	return
+}
+
 func ConvertToDBTestSuite(suite *remote.TestSuite) (result *TestSuite) {
 	result = &TestSuite{
 		Name: suite.Name,
