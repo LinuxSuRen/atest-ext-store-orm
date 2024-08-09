@@ -39,7 +39,7 @@ func NewRootCommand() (c *cobra.Command) {
 func (o *option) runE(c *cobra.Command, args []string) (err error) {
 	if o.version {
 		c.Println(version.GetVersion())
-		//c.Println(version.GetDate())
+		c.Println(version.GetDate())
 		return
 	}
 	remoteServer := pkg.NewRemoteServer()

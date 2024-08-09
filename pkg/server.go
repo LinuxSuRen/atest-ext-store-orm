@@ -30,6 +30,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -238,6 +239,22 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 		return
 	}
 
+	store := remote.GetStoreFromContext(ctx)
+	historyLimit := 10
+	if v, ok := store.Properties["historyLimit"]; ok {
+		if parsedHistoryLimit, parseErr := strconv.Atoi(v); parseErr == nil {
+			historyLimit = parsedHistoryLimit
+		}
+	}
+
+	var count int64
+	db.Model(&HistoryTestResult{}).Count(&count)
+
+	if count >= int64(historyLimit) {
+		fmt.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached, cannot create new TestCaseHistory\n", count, historyLimit)
+		return
+	}
+
 	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
 	return
 }
@@ -380,14 +397,14 @@ func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.
 	return
 }
 
-// func (s *dbserver) GetVersion(context.Context, *server.Empty) (ver *server.Version, err error) {
-// 	ver = &server.Version{
-// 		Version: version.GetVersion(),
-// 		Commit:  version.GetCommit(),
-// 		Date:    version.GetDate(),
-// 	}
-// 	return
-// }
+func (s *dbserver) GetVersion(context.Context, *server.Empty) (ver *server.Version, err error) {
+	ver = &server.Version{
+		Version: version.GetVersion(),
+		Commit:  version.GetCommit(),
+		Date:    version.GetDate(),
+	}
+	return
+}
 
 func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *server.PProfData, err error) {
 	log.Println("pprof", in.Name)

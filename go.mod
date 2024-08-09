@@ -1,13 +1,14 @@
 module github.com/linuxsuren/atest-ext-store-orm
 
-go 1.22.2
+go 1.22.4
 
-toolchain go1.22.4
+toolchain go1.22.6
 
 require (
 	github.com/linuxsuren/api-testing v0.0.18-0.20240712143814-6ce9363d5a07
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
+	google.golang.org/protobuf v1.33.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/driver/sqlite v1.5.6
@@ -53,6 +54,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/linuxsuren/go-fake-runtime v0.0.4 // indirect
+	github.com/linuxsuren/oauth-hub v0.0.0-20240809060240-e78c21b5d8d4 // indirect
 	github.com/linuxsuren/unstructured v0.0.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
@@ -85,15 +87,15 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/oauth2 v0.18.0 // indirect
+	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240827074726-d0b782cb43d6
