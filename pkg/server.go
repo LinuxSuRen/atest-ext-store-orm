@@ -251,8 +251,17 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 	db.Model(&HistoryTestResult{}).Count(&count)
 
 	if count >= int64(historyLimit) {
-		fmt.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached, cannot create new TestCaseHistory\n", count, historyLimit)
-		return
+		var oldestRecord HistoryTestResult
+		if err = db.Order("create_time").First(&oldestRecord).Error; err != nil {
+			fmt.Printf("Error find oldest record: %v\n", err)
+			return
+		}
+
+		if err = db.Delete(&oldestRecord).Error; err != nil {
+			fmt.Printf("Error delete oldest record: %v\n", err)
+			return
+		}
+		fmt.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached.\n", count, historyLimit)
 	}
 
 	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
