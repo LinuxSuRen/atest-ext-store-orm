@@ -347,7 +347,7 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentiy(db, input).Updates(input)
+	testCaseIdentity(db, input).Updates(input)
 
 	data := make(map[string]interface{})
 	if input.ExpectBody == "" {
@@ -358,7 +358,7 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	}
 
 	if len(data) > 0 {
-		testCaseIdentiy(db, input).Updates(data)
+		testCaseIdentity(db, input).Updates(data)
 	}
 	return
 }
@@ -370,7 +370,7 @@ func (s *dbserver) DeleteTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentiy(db, input).Delete(input)
+	testCaseIdentity(db, input).Delete(input)
 	return
 }
 
@@ -383,7 +383,21 @@ func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *s
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	historyTestCaseIdentiy(db, input).Delete(input)
+	historyTestCaseIdentity(db, input).Delete(input)
+	return
+}
+
+func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase *server.HistoryTestCase) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	input := &HistoryTestResult{
+		SuiteName: historyTestCase.SuiteName,
+		CaseName:  historyTestCase.CaseName,
+	}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	allHistoryTestCaseIdentity(db, input).Delete(input)
 	return
 }
 
@@ -415,10 +429,14 @@ func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *se
 	return
 }
 
-func testCaseIdentiy(db *gorm.DB, testcase *TestCase) *gorm.DB {
+func testCaseIdentity(db *gorm.DB, testcase *TestCase) *gorm.DB {
 	return db.Model(testcase).Where(fmt.Sprintf("suite_name = '%s' AND name = '%s'", testcase.SuiteName, testcase.Name))
 }
 
-func historyTestCaseIdentiy(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
+func historyTestCaseIdentity(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
 	return db.Model(historyTestResult).Where(fmt.Sprintf("id = '%s'", historyTestResult.ID))
+}
+
+func allHistoryTestCaseIdentity(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
+	return db.Model(historyTestResult).Where(fmt.Sprintf("suite_name = '%s' AND case_name = '%s'", historyTestResult.SuiteName, historyTestResult.CaseName))
 }
