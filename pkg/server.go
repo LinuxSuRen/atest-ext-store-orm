@@ -30,6 +30,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -392,7 +394,21 @@ func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *s
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	historyTestCaseIdentity(db, input).Delete(input)
+	var historyTestResult HistoryTestResult
+	if err = historyTestCaseIdentity(db, input).Find(&historyTestResult).Error; err != nil {
+		return nil, err
+	}
+	fileName := historyTestResult.Body
+	if strings.HasPrefix(fileName, "isFilePath-") {
+		tempDir := os.TempDir()
+		fullFilePath := filepath.Join(tempDir, fileName)
+
+		if err = os.Remove(fullFilePath); err != nil {
+			log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+		}
+	}
+
+	db.Delete(&historyTestResult)
 	return
 }
 
@@ -406,7 +422,23 @@ func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	allHistoryTestCaseIdentity(db, input).Delete(input)
+
+	var historyTestResults []HistoryTestResult
+	if err = allHistoryTestCaseIdentity(db, input).Find(&historyTestResults).Error; err != nil {
+		return nil, err
+	}
+	for _, historyTestResult := range historyTestResults {
+		fileName := historyTestResult.Body
+		if strings.HasPrefix(fileName, "isFilePath-") {
+			tempDir := os.TempDir()
+			fullFilePath := filepath.Join(tempDir, fileName)
+
+			if err = os.Remove(fullFilePath); err != nil {
+				log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+			}
+		}
+		db.Delete(&historyTestResult)
+	}
 	return
 }
 
