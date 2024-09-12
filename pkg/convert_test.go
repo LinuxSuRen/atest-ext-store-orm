@@ -16,12 +16,13 @@ limitations under the License.
 package pkg_test
 
 import (
-	"testing"
-
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
 	"github.com/linuxsuren/atest-ext-store-orm/pkg"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"testing"
+	"time"
 )
 
 func TestConvertToRemoteTestCase(t *testing.T) {
@@ -146,6 +147,113 @@ func TestConvertTestSuite(t *testing.T) {
 	t.Run("sliceToJSON", func(t *testing.T) {
 		assert.Equal(t, "[]", pkg.SliceToJSON(nil))
 	})
+}
+
+func TestConvertToDBHistoryTestResult(t *testing.T) {
+	t.Run("without testcaseResult and historyTestcase", func(t *testing.T) {
+		result := pkg.ConvertToDBHistoryTestResult(&server.HistoryTestResult{})
+		assert.Equal(t, &pkg.HistoryTestResult{}, result)
+	})
+
+	t.Run("have testcaseResult", func(t *testing.T) {
+		result := pkg.ConvertToDBHistoryTestResult(&server.HistoryTestResult{
+			TestCaseResult: []*server.TestCaseResult{
+				{
+					StatusCode: 200,
+					Body:       "Test body",
+					Output:     "Test output",
+				},
+			},
+		})
+		assert.Equal(t, &pkg.HistoryTestResult{
+			StatusCode: 200,
+			Body:       "Test body",
+			Output:     "Test output",
+		}, result)
+	})
+}
+
+var now = time.Now().UTC()
+var nowString = now.Format("2006-01-02T15:04:05.999999999")
+
+func TestConvertToRemoteHistoryTestResult(t *testing.T) {
+	assert.Equal(t, &server.HistoryTestResult{
+		CreateTime: timestamppb.New(now),
+		TestCaseResult: []*server.TestCaseResult{
+			{
+				Body:   "body",
+				Output: "output",
+				Header: samplePairs,
+			},
+		},
+		Data: &server.HistoryTestCase{
+			CreateTime: timestamppb.New(now),
+			SuiteSpec: &server.APISpec{
+				Kind: "kind",
+			},
+			Request: &server.Request{
+				Api:    "",
+				Method: "",
+				Header: []*server.Pair{
+					{Key: "key", Value: "value"},
+				},
+				Body: "body",
+			},
+			Response: &server.Response{
+				StatusCode: 0,
+				Body:       "",
+				Header:     nil,
+			},
+		},
+	}, pkg.ConvertToRemoteHistoryTestResult(&pkg.HistoryTestResult{
+		CreateTime: nowString,
+		Body:       "body",
+		Output:     "output",
+		Header:     sampleJSONMap,
+		SpecKind:   "kind",
+	}))
+}
+
+func TestConvertToGRPCHistoryTestSuite(t *testing.T) {
+	assert.Equal(t, &remote.HistoryTestSuite{
+		Items: []*server.HistoryTestCase{
+			{
+				CreateTime: timestamppb.New(now),
+				SuiteName:  "name",
+				SuiteSpec: &server.APISpec{
+					Kind: "kind",
+				},
+				Request: &server.Request{
+					Body: "Test Body",
+				},
+				Response: &server.Response{},
+			},
+		},
+	}, pkg.ConvertToGRPCHistoryTestSuite(&pkg.HistoryTestResult{
+		CreateTime: nowString,
+		SuiteName:  "name",
+		Body:       "Test Body",
+		SpecKind:   "kind",
+	}))
+}
+
+func TestConvertToGRPCHistoryTestCase(t *testing.T) {
+	assert.Equal(t, &server.HistoryTestCase{
+		CreateTime: timestamppb.New(now),
+		SuiteName:  "name",
+		SuiteSpec: &server.APISpec{
+			Kind: "kind",
+		},
+		Request: &server.Request{
+			Body: "Test Body",
+		},
+		Response: &server.Response{},
+	}, pkg.ConvertToGRPCHistoryTestCase(&pkg.HistoryTestResult{
+		CreateTime: nowString,
+		SuiteName:  "name",
+		Body:       "Test Body",
+		SpecKind:   "kind",
+	}))
 }
 
 const sampleJSONMap = `{"key":"value"}`
