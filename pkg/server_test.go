@@ -110,12 +110,12 @@ func TestNewRemoteServer(t *testing.T) {
 	})
 
 	t.Run("DeleteHistoryTestCase", func(t *testing.T) {
-		_, err := remoteServer.DeleteHistoryTestCase(defaultCtx, nil)
+		_, err := remoteServer.DeleteHistoryTestCase(defaultCtx, &server.HistoryTestCase{})
 		assert.Error(t, err)
 	})
 
 	t.Run("DeleteAllHistoryTestCase", func(t *testing.T) {
-		_, err := remoteServer.DeleteAllHistoryTestCase(defaultCtx, nil)
+		_, err := remoteServer.DeleteAllHistoryTestCase(defaultCtx, &server.HistoryTestCase{})
 		assert.Error(t, err)
 	})
 

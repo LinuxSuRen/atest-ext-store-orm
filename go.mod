@@ -98,6 +98,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240913030350-eef572d3a842
+replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240913070731-63814573b192
 
 //replace github.com/linuxsuren/api-testing => /home/ysf/project/api-testing
