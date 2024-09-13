@@ -5,8 +5,8 @@ github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/Masterminds/sprig/v3 v3.2.3 h1:eL2fZNezLomi0uOLqjQoN6BfsDD+fyLtgbJMAj9n6YA=
 github.com/Masterminds/sprig/v3 v3.2.3/go.mod h1:rXcFaZ2zZbLRJv/xSysmlgIM1u11eBaRMhvYXJNkGuM=
-github.com/SamYSF/api-testing v0.0.0-20240911062137-52c9a040fe24 h1:7lDwr+elqc46aIqGW8fi6kWCdlrufPborAi1DasUPm0=
-github.com/SamYSF/api-testing v0.0.0-20240911062137-52c9a040fe24/go.mod h1:uu0hyEYSgdSju31EugGwIGE2I/uv7VYNM/6ODPKKD7I=
+github.com/SamYSF/api-testing v0.0.0-20240913030350-eef572d3a842 h1:LBkbEAx3GFJNvdVU66ahvHwk4F7722kCEXyVw67MFtU=
+github.com/SamYSF/api-testing v0.0.0-20240913030350-eef572d3a842/go.mod h1:uu0hyEYSgdSju31EugGwIGE2I/uv7VYNM/6ODPKKD7I=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883 h1:bvNMNQO63//z+xNgfBlViaCIJKLlCJ6/fmUseuG0wVQ=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

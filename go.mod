@@ -91,11 +91,13 @@ require (
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	google.golang.org/genproto v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240911062137-52c9a040fe24
+replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240913030350-eef572d3a842
+
 //replace github.com/linuxsuren/api-testing => /home/ysf/project/api-testing

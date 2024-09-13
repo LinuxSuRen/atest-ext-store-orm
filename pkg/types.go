@@ -44,14 +44,15 @@ type HistoryTestResult struct {
 	Param     string
 
 	//case information
-	CaseName string `json:"caseName"`
-	CaseAPI  string
-	Method   string
-	Body     string
-	Header   string
-	Cookie   string
-	Query    string
-	Form     string
+	CaseName      string `json:"caseName"`
+	CaseAPI       string
+	Method        string
+	Body          string
+	Header        string
+	HistoryHeader string
+	Cookie        string
+	Query         string
+	Form          string
 
 	ExpectStatusCode int
 	ExpectBody       string

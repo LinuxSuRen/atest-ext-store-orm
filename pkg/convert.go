@@ -137,6 +137,7 @@ func ConvertToDBHistoryTestResult(historyTestResult *server.HistoryTestResult) (
 		result.CaseName = historyTestResult.Data.CaseName
 		result.SuiteName = historyTestResult.Data.SuiteName
 		result.SuiteAPI = historyTestResult.Data.SuiteApi
+		result.HistoryHeader = pairToJSON(historyTestResult.Data.HistoryHeader)
 		if historyTestResult.Data.Request != nil {
 			request := historyTestResult.Data.Request
 			result.CaseAPI = request.Api
@@ -226,6 +227,7 @@ func ConvertToGRPCHistoryTestCase(historyTestResult *HistoryTestResult) (result 
 		SuiteParam:       jsonToPair(historyTestResult.Param),
 		HistorySuiteName: historyTestResult.HistorySuiteName,
 		CreateTime:       timestamppb.New(createTime),
+		HistoryHeader:    jsonToPair(historyTestResult.HistoryHeader),
 
 		SuiteSpec: &server.APISpec{
 			Kind: historyTestResult.SpecKind,
