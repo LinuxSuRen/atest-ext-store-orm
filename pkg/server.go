@@ -19,9 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"strings"
-
 	"github.com/linuxsuren/api-testing/pkg/extension"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
@@ -32,6 +29,11 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 type dbserver struct {
@@ -49,7 +51,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dsn string
 	switch driver {
 	case "mysql", "":
-		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", user, password, address, database)
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=true", user, password, address, database)
 		dialector = mysql.Open(dsn)
 	case "sqlite":
 		dsn = fmt.Sprintf("%s.db", database)
@@ -78,6 +80,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 
 	db.AutoMigrate(&TestCase{})
 	db.AutoMigrate(&TestSuite{})
+	db.AutoMigrate(&HistoryTestResult{})
 	return
 }
 
@@ -165,6 +168,19 @@ func (s *dbserver) GetTestSuite(ctx context.Context, suite *remote.TestSuite) (r
 	return
 }
 
+func (s *dbserver) GetHistoryTestSuite(ctx context.Context, suite *remote.HistoryTestSuite) (reply *remote.HistoryTestSuite, err error) {
+	query := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	db.Find(&query, nameQuery, suite.HistorySuiteName)
+
+	reply = ConvertToGRPCHistoryTestSuite(query)
+	return
+}
+
 func (s *dbserver) UpdateTestSuite(ctx context.Context, suite *remote.TestSuite) (reply *remote.TestSuite, err error) {
 	reply = &remote.TestSuite{}
 	input := ConvertToDBTestSuite(suite)
@@ -218,6 +234,72 @@ func (s *dbserver) CreateTestCase(ctx context.Context, testcase *server.TestCase
 	return
 }
 
+func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult *server.HistoryTestResult) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	store := remote.GetStoreFromContext(ctx)
+	historyLimit := 10
+	if v, ok := store.Properties["historyLimit"]; ok {
+		if parsedHistoryLimit, parseErr := strconv.Atoi(v); parseErr == nil {
+			historyLimit = parsedHistoryLimit
+		}
+	}
+
+	var count int64
+	db.Model(&HistoryTestResult{}).Count(&count)
+
+	if count >= int64(historyLimit) {
+		var oldestRecord HistoryTestResult
+		if err = db.Order("create_time").First(&oldestRecord).Error; err != nil {
+			fmt.Printf("Error find oldest record: %v\n", err)
+			return
+		}
+
+		if err = db.Delete(&oldestRecord).Error; err != nil {
+			fmt.Printf("Error delete oldest record: %v\n", err)
+			return
+		}
+		fmt.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached.\n", count, historyLimit)
+	}
+
+	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
+	return
+}
+
+func (s *dbserver) ListHistoryTestSuite(ctx context.Context, _ *server.Empty) (suites *remote.HistoryTestSuites, err error) {
+	items := make([]*HistoryTestResult, 0)
+
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	db.Find(&items)
+
+	groupedItems := make(map[string][]*HistoryTestResult)
+	for _, item := range items {
+		groupedItems[item.HistorySuiteName] = append(groupedItems[item.HistorySuiteName], item)
+	}
+
+	suites = &remote.HistoryTestSuites{}
+
+	for historySuiteName, group := range groupedItems {
+		suite := &remote.HistoryTestSuite{
+			HistorySuiteName: historySuiteName,
+		}
+		for _, item := range group {
+			converted := ConvertToGRPCHistoryTestSuite(item)
+			suite.Items = append(suite.Items, converted.Items[0])
+		}
+		suites.Data = append(suites.Data, suite)
+	}
+	return
+}
+
 func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (result *server.TestCase, err error) {
 	item := &TestCase{}
 	var db *gorm.DB
@@ -230,6 +312,45 @@ func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (
 	return
 }
 
+func (s *dbserver) GetHistoryTestCaseWithResult(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestResult, err error) {
+	item := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&item, "id = ? ", testcase.ID)
+
+	result = ConvertToRemoteHistoryTestResult(item)
+	return
+}
+
+func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.HistoryTestCase) (result *server.HistoryTestCase, err error) {
+	item := &HistoryTestResult{}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&item, "id = ? ", testcase.ID)
+
+	result = ConvertToGRPCHistoryTestCase(item)
+	return
+}
+
+func (s *dbserver) GetTestCaseAllHistory(ctx context.Context, testcase *server.TestCase) (result *server.HistoryTestCases, err error) {
+	items := make([]*HistoryTestResult, 0)
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	db.Find(&items, "suite_name = ? AND case_name = ? ", testcase.SuiteName, testcase.Name)
+
+	result = &server.HistoryTestCases{}
+	for i := range items {
+		result.Data = append(result.Data, ConvertToGRPCHistoryTestCase(items[i]))
+	}
+	return
+}
+
 func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase) (reply *server.TestCase, err error) {
 	reply = &server.TestCase{}
 	input := ConverToDBTestCase(testcase)
@@ -237,7 +358,7 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentiy(db, input).Updates(input)
+	testCaseIdentity(db, input).Updates(input)
 
 	data := make(map[string]interface{})
 	if input.ExpectBody == "" {
@@ -248,7 +369,7 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	}
 
 	if len(data) > 0 {
-		testCaseIdentiy(db, input).Updates(data)
+		testCaseIdentity(db, input).Updates(data)
 	}
 	return
 }
@@ -260,7 +381,64 @@ func (s *dbserver) DeleteTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentiy(db, input).Delete(input)
+	testCaseIdentity(db, input).Delete(input)
+	return
+}
+
+func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *server.HistoryTestCase) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	input := &HistoryTestResult{
+		ID: historyTestCase.ID,
+	}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+	var historyTestResult HistoryTestResult
+	if err = historyTestCaseIdentity(db, input).Find(&historyTestResult).Error; err != nil {
+		return nil, err
+	}
+	fileName := historyTestResult.Body
+	if strings.HasPrefix(fileName, "isFilePath-") {
+		tempDir := os.TempDir()
+		fullFilePath := filepath.Join(tempDir, fileName)
+
+		if err = os.Remove(fullFilePath); err != nil {
+			log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+		}
+	}
+
+	db.Delete(&historyTestResult)
+	return
+}
+
+func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase *server.HistoryTestCase) (reply *server.Empty, err error) {
+	reply = &server.Empty{}
+	input := &HistoryTestResult{
+		SuiteName: historyTestCase.SuiteName,
+		CaseName:  historyTestCase.CaseName,
+	}
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err != nil {
+		return
+	}
+
+	var historyTestResults []HistoryTestResult
+	if err = allHistoryTestCaseIdentity(db, input).Find(&historyTestResults).Error; err != nil {
+		return nil, err
+	}
+	for _, historyTestResult := range historyTestResults {
+		fileName := historyTestResult.Body
+		if strings.HasPrefix(fileName, "isFilePath-") {
+			tempDir := os.TempDir()
+			fullFilePath := filepath.Join(tempDir, fileName)
+
+			if err = os.Remove(fullFilePath); err != nil {
+				log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+			}
+		}
+		db.Delete(&historyTestResult)
+	}
 	return
 }
 
@@ -292,6 +470,14 @@ func (s *dbserver) PProf(ctx context.Context, in *server.PProfRequest) (data *se
 	return
 }
 
-func testCaseIdentiy(db *gorm.DB, testcase *TestCase) *gorm.DB {
+func testCaseIdentity(db *gorm.DB, testcase *TestCase) *gorm.DB {
 	return db.Model(testcase).Where(fmt.Sprintf("suite_name = '%s' AND name = '%s'", testcase.SuiteName, testcase.Name))
+}
+
+func historyTestCaseIdentity(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
+	return db.Model(historyTestResult).Where(fmt.Sprintf("id = '%s'", historyTestResult.ID))
+}
+
+func allHistoryTestCaseIdentity(db *gorm.DB, historyTestResult *HistoryTestResult) *gorm.DB {
+	return db.Model(historyTestResult).Where(fmt.Sprintf("suite_name = '%s' AND case_name = '%s'", historyTestResult.SuiteName, historyTestResult.CaseName))
 }

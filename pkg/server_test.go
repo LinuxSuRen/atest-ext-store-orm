@@ -17,13 +17,15 @@ package pkg
 
 import (
 	"context"
-	"os"
-	"testing"
-
+	"fmt"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	atest "github.com/linuxsuren/api-testing/pkg/testing"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"os"
+	"testing"
+	"time"
 )
 
 func TestNewRemoteServer(t *testing.T) {
@@ -85,6 +87,36 @@ func TestNewRemoteServer(t *testing.T) {
 		reply, err := remoteServer.Verify(defaultCtx, nil)
 		assert.NoError(t, err)
 		assert.False(t, reply.Ready)
+	})
+
+	t.Run("CreateTestCaseHistory", func(t *testing.T) {
+		_, err := remoteServer.CreateTestCaseHistory(defaultCtx, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("ListHistoryTestSuite", func(t *testing.T) {
+		_, err := remoteServer.ListHistoryTestSuite(defaultCtx, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("GetHistoryTestCase", func(t *testing.T) {
+		_, err := remoteServer.GetHistoryTestCase(defaultCtx, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("GetTestCaseAllHistory", func(t *testing.T) {
+		_, err := remoteServer.GetTestCaseAllHistory(defaultCtx, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("DeleteHistoryTestCase", func(t *testing.T) {
+		_, err := remoteServer.DeleteHistoryTestCase(defaultCtx, &server.HistoryTestCase{})
+		assert.Error(t, err)
+	})
+
+	t.Run("DeleteAllHistoryTestCase", func(t *testing.T) {
+		_, err := remoteServer.DeleteAllHistoryTestCase(defaultCtx, &server.HistoryTestCase{})
+		assert.Error(t, err)
 	})
 
 	t.Run("invalid orm driver", func(t *testing.T) {
@@ -223,6 +255,70 @@ func TestSQLite(t *testing.T) {
 
 	t.Run("GetVersion", func(t *testing.T) {
 		_, err := remoteServer.GetVersion(defaultCtx, &server.Empty{})
+		assert.NoError(t, err)
+	})
+
+	now := time.Now()
+	t.Run("CreateTestCaseHistory", func(t *testing.T) {
+		_, err := remoteServer.CreateTestCaseHistory(defaultCtx, &server.HistoryTestResult{
+			CreateTime: timestamppb.New(now),
+			Data: &server.HistoryTestCase{
+				CaseName:  "test",
+				SuiteName: "test",
+			},
+			TestCaseResult: []*server.TestCaseResult{
+				{Output: "test output"},
+			},
+		})
+		assert.NoError(t, err)
+	})
+	id := fmt.Sprintf("%s_test_test", now.Local().Format("2006-01-02T15:04:05.999999999"))
+
+	t.Run("ListHistoryTestSuite", func(t *testing.T) {
+		result, err := remoteServer.ListHistoryTestSuite(defaultCtx, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+		assert.Equal(t, "test", result.Data[0].Items[0].SuiteName)
+	})
+
+	t.Run("GetHistoryTestCase", func(t *testing.T) {
+		result, err := remoteServer.GetHistoryTestCase(defaultCtx, &server.HistoryTestCase{
+			ID: id,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "test", result.CaseName)
+	})
+
+	t.Run("GetHistoryTestCaseWithResult", func(t *testing.T) {
+		result, err := remoteServer.GetHistoryTestCaseWithResult(defaultCtx, &server.HistoryTestCase{
+			ID: id,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "test", result.Data.CaseName)
+		assert.Equal(t, "test output", result.TestCaseResult[0].Output)
+	})
+
+	t.Run("GetTestCaseAllHistory", func(t *testing.T) {
+		result, err := remoteServer.GetTestCaseAllHistory(defaultCtx, &server.TestCase{
+			Name:      "test",
+			SuiteName: "test",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+	})
+
+	t.Run("DeleteHistoryTestCase", func(t *testing.T) {
+		_, err := remoteServer.DeleteHistoryTestCase(defaultCtx, &server.HistoryTestCase{
+			ID: id,
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("DeleteAllHistoryTestCase", func(t *testing.T) {
+		_, err := remoteServer.DeleteAllHistoryTestCase(defaultCtx, &server.HistoryTestCase{
+			CaseName:  "test",
+			SuiteName: "test",
+		})
 		assert.NoError(t, err)
 	})
 }
