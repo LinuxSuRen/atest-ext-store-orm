@@ -402,12 +402,11 @@ func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *s
 	if strings.HasPrefix(fileName, "isFilePath-") {
 		tempDir := os.TempDir()
 		fullFilePath := filepath.Join(tempDir, fileName)
-
 		if err = os.Remove(fullFilePath); err != nil {
 			log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+			return
 		}
 	}
-
 	db.Delete(&historyTestResult)
 	return
 }
@@ -435,6 +434,7 @@ func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase
 
 			if err = os.Remove(fullFilePath); err != nil {
 				log.Printf("Failed to delete file: %s, error: %v\n", fullFilePath, err)
+				continue
 			}
 		}
 		db.Delete(&historyTestResult)
