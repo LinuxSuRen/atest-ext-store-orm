@@ -32,6 +32,7 @@ func NewRootCommand() (c *cobra.Command) {
 		RunE:  opt.runE,
 	}
 	opt.AddFlags(c.Flags())
+	c.Flags().IntVarP(&opt.historyLimit, "history-limit", "", 1000, "History record items count limit")
 	c.Flags().BoolVarP(&opt.version, "version", "", false, "Print the version then exit")
 	return
 }
@@ -42,12 +43,13 @@ func (o *option) runE(c *cobra.Command, args []string) (err error) {
 		c.Println(version.GetDate())
 		return
 	}
-	remoteServer := pkg.NewRemoteServer()
+	remoteServer := pkg.NewRemoteServer(o.historyLimit)
 	err = ext.CreateRunner(o.Extension, c, remoteServer)
 	return
 }
 
 type option struct {
 	*ext.Extension
-	version bool
+	historyLimit int
+	version      bool
 }

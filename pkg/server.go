@@ -19,6 +19,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/linuxsuren/api-testing/pkg/extension"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
@@ -29,20 +35,18 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 type dbserver struct {
 	remote.UnimplementedLoaderServer
+	defaultHistoryLimit int
 }
 
 // NewRemoteServer creates a remote server instance
-func NewRemoteServer() (s remote.LoaderServer) {
-	s = &dbserver{}
+func NewRemoteServer(defaultHistoryLimit int) (s remote.LoaderServer) {
+	s = &dbserver{
+		defaultHistoryLimit: defaultHistoryLimit,
+	}
 	return
 }
 
@@ -242,10 +246,12 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 	}
 
 	store := remote.GetStoreFromContext(ctx)
-	historyLimit := 10
+	historyLimit := s.defaultHistoryLimit
 	if v, ok := store.Properties["historyLimit"]; ok {
 		if parsedHistoryLimit, parseErr := strconv.Atoi(v); parseErr == nil {
 			historyLimit = parsedHistoryLimit
+		} else {
+			log.Printf("failed to parse history limit: %v\n", parseErr)
 		}
 	}
 
@@ -255,15 +261,15 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 	if count >= int64(historyLimit) {
 		var oldestRecord HistoryTestResult
 		if err = db.Order("create_time").First(&oldestRecord).Error; err != nil {
-			fmt.Printf("Error find oldest record: %v\n", err)
+			log.Printf("Error find oldest record: %v\n", err)
 			return
 		}
 
 		if err = db.Delete(&oldestRecord).Error; err != nil {
-			fmt.Printf("Error delete oldest record: %v\n", err)
+			log.Printf("Error delete oldest record: %v\n", err)
 			return
 		}
-		fmt.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached.\n", count, historyLimit)
+		log.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached.\n", count, historyLimit)
 	}
 
 	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
