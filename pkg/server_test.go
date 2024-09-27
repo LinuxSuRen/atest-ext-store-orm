@@ -18,18 +18,19 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/linuxsuren/api-testing/pkg/server"
 	atest "github.com/linuxsuren/api-testing/pkg/testing"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestNewRemoteServer(t *testing.T) {
-	remoteServer := NewRemoteServer()
+	remoteServer := NewRemoteServer(10)
 	assert.NotNil(t, remoteServer)
 	defaultCtx := context.Background()
 
@@ -120,7 +121,7 @@ func TestNewRemoteServer(t *testing.T) {
 	})
 
 	t.Run("invalid orm driver", func(t *testing.T) {
-		remoteServer := NewRemoteServer()
+		remoteServer := NewRemoteServer(10)
 		assert.NotNil(t, remoteServer)
 		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 			Properties: map[string]string{
@@ -132,7 +133,7 @@ func TestNewRemoteServer(t *testing.T) {
 	})
 
 	t.Run("invalid mysql config", func(t *testing.T) {
-		remoteServer := NewRemoteServer()
+		remoteServer := NewRemoteServer(10)
 		assert.NotNil(t, remoteServer)
 		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 			Properties: map[string]string{
@@ -144,7 +145,7 @@ func TestNewRemoteServer(t *testing.T) {
 	})
 
 	t.Run("invalid postgres config", func(t *testing.T) {
-		remoteServer := NewRemoteServer()
+		remoteServer := NewRemoteServer(10)
 		assert.NotNil(t, remoteServer)
 		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 			Properties: map[string]string{
@@ -158,7 +159,7 @@ func TestNewRemoteServer(t *testing.T) {
 }
 
 func TestSQLite(t *testing.T) {
-	remoteServer := NewRemoteServer()
+	remoteServer := NewRemoteServer(10)
 	assert.NotNil(t, remoteServer)
 	defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 		Properties: map[string]string{
