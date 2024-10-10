@@ -1,8 +1,8 @@
 package pkg
 
 type TestCase struct {
-	SuiteName string `json:"suiteName"`
-	Name      string `json:"name"`
+	SuiteName string `json:"suiteName" gorm:"foreignKey:Name"`
+	Name      string `json:"name" gorm:"primaryKey"`
 	API       string
 	Method    string
 	Body      string
@@ -20,7 +20,7 @@ type TestCase struct {
 }
 
 type TestSuite struct {
-	Name     string
+	Name     string `gorm:"primaryKey"`
 	API      string
 	SpecKind string
 	SpecURL  string
