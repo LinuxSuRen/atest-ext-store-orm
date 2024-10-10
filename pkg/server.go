@@ -82,9 +82,9 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		return
 	}
 
-	db.AutoMigrate(&TestCase{})
-	db.AutoMigrate(&TestSuite{})
-	db.AutoMigrate(&HistoryTestResult{})
+	err = errors.Join(err, db.AutoMigrate(&TestCase{}))
+	err = errors.Join(err, db.AutoMigrate(&TestSuite{}))
+	err = errors.Join(err, db.AutoMigrate(&HistoryTestResult{}))
 	return
 }
 
@@ -149,7 +149,11 @@ func (s *dbserver) CreateTestSuite(ctx context.Context, testSuite *remote.TestSu
 	return
 }
 
-const nameQuery = `name = ?`
+const (
+	nameQuery      = `name = ?`
+	suiteNameQuery = "suite_name = ?"
+	idQuery        = "id = ?"
+)
 
 func (s *dbserver) GetTestSuite(ctx context.Context, suite *remote.TestSuite) (reply *remote.TestSuite, err error) {
 	query := &TestSuite{}
@@ -208,7 +212,13 @@ func (s *dbserver) DeleteTestSuite(ctx context.Context, suite *remote.TestSuite)
 		return
 	}
 
-	err = db.Delete(TestSuite{}, nameQuery, suite.Name).Error
+	err = db.Transaction(func(tx *gorm.DB) (err error) {
+		err = db.Delete(TestSuite{}, nameQuery, suite.Name).Error
+		if err == nil {
+			err = db.Delete(TestCase{}, suiteNameQuery, suite.Name).Error
+		}
+		return
+	})
 	return
 }
 
@@ -218,11 +228,11 @@ func (s *dbserver) ListTestCases(ctx context.Context, suite *remote.TestSuite) (
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&items, "suite_name = ?", suite.Name)
-
-	result = &server.TestCases{}
-	for i := range items {
-		result.Data = append(result.Data, ConvertToRemoteTestCase(items[i]))
+	if err = db.Find(&items, suiteNameQuery, suite.Name).Error; err == nil {
+		result = &server.TestCases{}
+		for i := range items {
+			result.Data = append(result.Data, ConvertToRemoteTestCase(items[i]))
+		}
 	}
 	return
 }
@@ -312,9 +322,9 @@ func (s *dbserver) GetTestCase(ctx context.Context, testcase *server.TestCase) (
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&item, "suite_name = ? AND name = ?", testcase.SuiteName, testcase.Name)
-
-	result = ConvertToRemoteTestCase(item)
+	if err = db.Find(&item, "suite_name = ? AND name = ?", testcase.SuiteName, testcase.Name).Error; err == nil {
+		result = ConvertToRemoteTestCase(item)
+	}
 	return
 }
 
@@ -324,7 +334,7 @@ func (s *dbserver) GetHistoryTestCaseWithResult(ctx context.Context, testcase *s
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&item, "id = ? ", testcase.ID)
+	db.Find(&item, idQuery, testcase.ID)
 
 	result = ConvertToRemoteHistoryTestResult(item)
 	return
@@ -336,7 +346,7 @@ func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.Hist
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&item, "id = ? ", testcase.ID)
+	db.Find(&item, idQuery, testcase.ID)
 
 	result = ConvertToGRPCHistoryTestCase(item)
 	return
@@ -364,7 +374,9 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentity(db, input).Updates(input)
+	if err = testCaseIdentity(db, input).Updates(input).Error; err != nil {
+		return
+	}
 
 	data := make(map[string]interface{})
 	if input.ExpectBody == "" {
@@ -375,7 +387,7 @@ func (s *dbserver) UpdateTestCase(ctx context.Context, testcase *server.TestCase
 	}
 
 	if len(data) > 0 {
-		testCaseIdentity(db, input).Updates(data)
+		err = testCaseIdentity(db, input).Updates(data).Error
 	}
 	return
 }
