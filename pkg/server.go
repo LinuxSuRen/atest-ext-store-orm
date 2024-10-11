@@ -124,15 +124,16 @@ func (s *dbserver) ListTestSuite(ctx context.Context, _ *server.Empty) (suites *
 		return
 	}
 
-	db.Find(&items)
-	suites = &remote.TestSuites{}
-	for i := range items {
-		suite := ConvertToGRPCTestSuite(items[i])
-		suites.Data = append(suites.Data, suite)
+	if err = db.Find(&items).Error; err == nil {
+		suites = &remote.TestSuites{}
+		for i := range items {
+			suite := ConvertToGRPCTestSuite(items[i])
+			suites.Data = append(suites.Data, suite)
 
-		suite.Full = true
-		if suiteWithCases, dErr := s.GetTestSuite(ctx, suite); dErr == nil {
-			suites.Data[i] = suiteWithCases
+			suite.Full = true
+			if suiteWithCases, dErr := s.GetTestSuite(ctx, suite); dErr == nil {
+				suites.Data[i] = suiteWithCases
+			}
 		}
 	}
 	return
@@ -145,7 +146,7 @@ func (s *dbserver) CreateTestSuite(ctx context.Context, testSuite *remote.TestSu
 		return
 	}
 
-	db.Create(ConvertToDBTestSuite(testSuite))
+	err = db.Create(ConvertToDBTestSuite(testSuite)).Error
 	return
 }
 
@@ -162,15 +163,15 @@ func (s *dbserver) GetTestSuite(ctx context.Context, suite *remote.TestSuite) (r
 		return
 	}
 
-	db.Find(&query, nameQuery, suite.Name)
-
-	reply = ConvertToGRPCTestSuite(query)
-	if suite.Full {
-		var testcases *server.TestCases
-		if testcases, err = s.ListTestCases(ctx, &remote.TestSuite{
-			Name: suite.Name,
-		}); err == nil && testcases != nil {
-			reply.Items = testcases.Data
+	if err = db.Find(&query, nameQuery, suite.Name).Error; err == nil {
+		reply = ConvertToGRPCTestSuite(query)
+		if suite.Full {
+			var testcases *server.TestCases
+			if testcases, err = s.ListTestCases(ctx, &remote.TestSuite{
+				Name: suite.Name,
+			}); err == nil && testcases != nil {
+				reply.Items = testcases.Data
+			}
 		}
 	}
 	return
@@ -183,9 +184,9 @@ func (s *dbserver) GetHistoryTestSuite(ctx context.Context, suite *remote.Histor
 		return
 	}
 
-	db.Find(&query, nameQuery, suite.HistorySuiteName)
-
-	reply = ConvertToGRPCHistoryTestSuite(query)
+	if err = db.Find(&query, nameQuery, suite.HistorySuiteName).Error; err == nil {
+		reply = ConvertToGRPCHistoryTestSuite(query)
+	}
 	return
 }
 
@@ -197,7 +198,7 @@ func (s *dbserver) UpdateTestSuite(ctx context.Context, suite *remote.TestSuite)
 		return
 	}
 
-	testSuiteIdentity(db, input).Updates(input)
+	err = testSuiteIdentity(db, input).Updates(input).Error
 	return
 }
 
@@ -244,7 +245,7 @@ func (s *dbserver) CreateTestCase(ctx context.Context, testcase *server.TestCase
 		return
 	}
 	reply = &server.Empty{}
-	db.Create(&payload)
+	err = db.Create(&payload).Error
 	return
 }
 
@@ -266,7 +267,9 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 	}
 
 	var count int64
-	db.Model(&HistoryTestResult{}).Count(&count)
+	if err = db.Model(&HistoryTestResult{}).Count(&count).Error; err != nil {
+		return
+	}
 
 	if count >= int64(historyLimit) {
 		var oldestRecord HistoryTestResult
@@ -282,7 +285,7 @@ func (s *dbserver) CreateTestCaseHistory(ctx context.Context, historyTestResult 
 		log.Printf("Existing count: %d, limit: %d\nmaximum number of entries reached.\n", count, historyLimit)
 	}
 
-	db.Create(ConvertToDBHistoryTestResult(historyTestResult))
+	err = db.Create(ConvertToDBHistoryTestResult(historyTestResult)).Error
 	return
 }
 
@@ -294,7 +297,9 @@ func (s *dbserver) ListHistoryTestSuite(ctx context.Context, _ *server.Empty) (s
 		return
 	}
 
-	db.Find(&items)
+	if err = db.Find(&items).Error; err != nil {
+		return
+	}
 
 	groupedItems := make(map[string][]*HistoryTestResult)
 	for _, item := range items {
@@ -334,9 +339,9 @@ func (s *dbserver) GetHistoryTestCaseWithResult(ctx context.Context, testcase *s
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&item, idQuery, testcase.ID)
-
-	result = ConvertToRemoteHistoryTestResult(item)
+	if err = db.Find(&item, idQuery, testcase.ID).Error; err == nil {
+		result = ConvertToRemoteHistoryTestResult(item)
+	}
 	return
 }
 
@@ -346,9 +351,10 @@ func (s *dbserver) GetHistoryTestCase(ctx context.Context, testcase *server.Hist
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&item, idQuery, testcase.ID)
 
-	result = ConvertToGRPCHistoryTestCase(item)
+	if err = db.Find(&item, idQuery, testcase.ID).Error; err == nil {
+		result = ConvertToGRPCHistoryTestCase(item)
+	}
 	return
 }
 
@@ -358,11 +364,11 @@ func (s *dbserver) GetTestCaseAllHistory(ctx context.Context, testcase *server.T
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	db.Find(&items, "suite_name = ? AND case_name = ? ", testcase.SuiteName, testcase.Name)
-
-	result = &server.HistoryTestCases{}
-	for i := range items {
-		result.Data = append(result.Data, ConvertToGRPCHistoryTestCase(items[i]))
+	if err = db.Find(&items, "suite_name = ? AND case_name = ? ", testcase.SuiteName, testcase.Name).Error; err == nil {
+		result = &server.HistoryTestCases{}
+		for i := range items {
+			result.Data = append(result.Data, ConvertToGRPCHistoryTestCase(items[i]))
+		}
 	}
 	return
 }
@@ -399,7 +405,7 @@ func (s *dbserver) DeleteTestCase(ctx context.Context, testcase *server.TestCase
 	if db, err = s.getClient(ctx); err != nil {
 		return
 	}
-	testCaseIdentity(db, input).Delete(input)
+	err = testCaseIdentity(db, input).Delete(input).Error
 	return
 }
 
@@ -425,7 +431,7 @@ func (s *dbserver) DeleteHistoryTestCase(ctx context.Context, historyTestCase *s
 			return
 		}
 	}
-	db.Delete(&historyTestResult)
+	err = db.Delete(&historyTestResult).Error
 	return
 }
 
