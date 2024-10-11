@@ -5,7 +5,7 @@ go 1.22.4
 toolchain go1.22.6
 
 require (
-	github.com/linuxsuren/api-testing v0.0.18-0.20241009151758-7de67ca381a6
+	github.com/linuxsuren/api-testing v0.0.18-0.20241010082942-dcdac9e032e5
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/protobuf v1.33.0
@@ -97,7 +97,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/linuxsuren/api-testing => github.com/SamYSF/api-testing v0.0.0-20240913070731-63814573b192
-
-//replace github.com/linuxsuren/api-testing => /home/ysf/project/api-testing

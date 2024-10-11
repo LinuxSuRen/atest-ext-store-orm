@@ -112,6 +112,18 @@ items:
   expect:
     bodyFieldsExpect:
       api: http://localhost:8080/server.Runner
+- name: deleteDuplicatedSuite
+  request:
+    api: /suites/{{.param.suiteName}}-copy
+    header:
+      X-Store-Name: "{{.param.store}}"
+- name: getDeletedTestcase
+  request:
+    api: /suites/{{.param.suiteName}}-copy/cases/{{.param.caseName}}
+    header:
+      X-Store-Name: "{{.param.store}}"
+  response:
+    statusCode: 500
 - name: GetSuggestedAPIs
   request:
     api: /suggestedAPIs

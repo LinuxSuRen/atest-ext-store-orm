@@ -5,8 +5,6 @@ github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/Masterminds/sprig/v3 v3.2.3 h1:eL2fZNezLomi0uOLqjQoN6BfsDD+fyLtgbJMAj9n6YA=
 github.com/Masterminds/sprig/v3 v3.2.3/go.mod h1:rXcFaZ2zZbLRJv/xSysmlgIM1u11eBaRMhvYXJNkGuM=
-github.com/SamYSF/api-testing v0.0.0-20240913070731-63814573b192 h1:hHFszkA9lWWQ0UmyE8/C8uXRP4hAyQHAXilVSg87e/w=
-github.com/SamYSF/api-testing v0.0.0-20240913070731-63814573b192/go.mod h1:uu0hyEYSgdSju31EugGwIGE2I/uv7VYNM/6ODPKKD7I=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883 h1:bvNMNQO63//z+xNgfBlViaCIJKLlCJ6/fmUseuG0wVQ=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -95,6 +93,8 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/linuxsuren/api-testing v0.0.18-0.20241010082942-dcdac9e032e5 h1:WCe+p6aOJVALuIzDT7H2ALhL+PaGj7FMyRQj3f7si3k=
+github.com/linuxsuren/api-testing v0.0.18-0.20241010082942-dcdac9e032e5/go.mod h1:W97lpQseS5SfGE+FOAY29udSbp+KRxUu/EoIJWAVkIw=
 github.com/linuxsuren/go-fake-runtime v0.0.4 h1:y+tvBuw6MKTCav8Bo5HWwaXhBx1Z//VAvqI3gpOWqvw=
 github.com/linuxsuren/go-fake-runtime v0.0.4/go.mod h1:zmh6J78hSnWZo68faMA2eKOdaEp8eFbERHi3ZB9xHCQ=
 github.com/linuxsuren/oauth-hub v0.0.0-20240809060240-e78c21b5d8d4 h1:muVmKxx+JneaVgUKHqLc+As5vpgKXZAfVu6h+iyb5LQ=

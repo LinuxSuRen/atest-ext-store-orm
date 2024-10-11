@@ -1,8 +1,8 @@
 package pkg
 
 type TestCase struct {
-	SuiteName string `json:"suiteName"`
-	Name      string `json:"name"`
+	SuiteName string `json:"suiteName" gorm:"type:varchar(200);uniqueIndex:idx_name_and_suite_name"`
+	Name      string `gorm:"type:varchar(200);uniqueIndex:idx_name_and_suite_name"`
 	API       string
 	Method    string
 	Body      string
@@ -20,15 +20,11 @@ type TestCase struct {
 }
 
 type TestSuite struct {
-	Name     string
+	Name     string `gorm:"primaryKey"`
 	API      string
 	SpecKind string
 	SpecURL  string
 	Param    string
-}
-
-type HistoryTestSuite struct {
-	Name string
 }
 
 type HistoryTestResult struct {
