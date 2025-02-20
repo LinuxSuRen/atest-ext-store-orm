@@ -40,7 +40,8 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	}
 
 	result = &server.DataQueryResult{
-		Data: []*server.Pair{},
+		Data:  []*server.Pair{},
+		Items: make([]*server.Pairs, 0),
 	}
 
 	for rows.Next() {
@@ -71,6 +72,9 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 			// Append the map to our slice of maps.
 			result.Data = append(result.Data, rowData)
 		}
+		result.Items = append(result.Items, &server.Pairs{
+			Data: result.Data,
+		})
 	}
 
 	return
