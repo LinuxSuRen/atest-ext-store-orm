@@ -59,8 +59,8 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 		// Create our map, and retrieve the value for each column from the pointers slice,
 		// storing it in the map with the name of the column as the key.
-		rowData := &server.Pair{}
 		for i, colName := range columns {
+			rowData := &server.Pair{}
 			val := columnsData[i]
 			b, ok := val.([]byte)
 			if ok {
@@ -70,10 +70,10 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				rowData.Key = colName
 				rowData.Value = val.(string)
 			}
-		}
 
-		// Append the map to our slice of maps.
-		result.Data = append(result.Data, rowData)
+			// Append the map to our slice of maps.
+			result.Data = append(result.Data, rowData)
+		}
 	}
 
 	return
