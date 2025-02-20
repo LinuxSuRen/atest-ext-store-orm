@@ -5,7 +5,7 @@ go 1.22.4
 toolchain go1.22.6
 
 require (
-	github.com/linuxsuren/api-testing v0.0.19-0.20250218003456-9f886045f3c4
+	github.com/linuxsuren/api-testing v0.0.19-0.20250220092001-ed58adc30f20
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/protobuf v1.33.0

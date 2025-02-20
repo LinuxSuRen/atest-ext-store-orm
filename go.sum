@@ -128,6 +128,10 @@ github.com/linuxsuren/api-testing v0.0.19-0.20250216140727-0da02ed3f48e h1:rJbp0
 github.com/linuxsuren/api-testing v0.0.19-0.20250216140727-0da02ed3f48e/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
 github.com/linuxsuren/api-testing v0.0.19-0.20250218003456-9f886045f3c4 h1:ZFHdwhb15o6RjNzDFDm9iQ1RQ2Tx9FRsMgrHfzheSzo=
 github.com/linuxsuren/api-testing v0.0.19-0.20250218003456-9f886045f3c4/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
+github.com/linuxsuren/api-testing v0.0.19-0.20250220091630-8b97110d9dc3 h1:G7ixhhLR9T9qz/J3J6y8tV7+wpQoZGHLzJ0ThCggYlw=
+github.com/linuxsuren/api-testing v0.0.19-0.20250220091630-8b97110d9dc3/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
+github.com/linuxsuren/api-testing v0.0.19-0.20250220092001-ed58adc30f20 h1:DiT8lZ4rfFO4WWhZ9hMaY1Wg90jVi9KVZ7t2L7eAsps=
+github.com/linuxsuren/api-testing v0.0.19-0.20250220092001-ed58adc30f20/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
 github.com/linuxsuren/go-fake-runtime v0.0.4 h1:y+tvBuw6MKTCav8Bo5HWwaXhBx1Z//VAvqI3gpOWqvw=
 github.com/linuxsuren/go-fake-runtime v0.0.4/go.mod h1:zmh6J78hSnWZo68faMA2eKOdaEp8eFbERHi3ZB9xHCQ=
 github.com/linuxsuren/go-service v0.0.0-20231225060426-efabcd3a5161 h1:dSL/ah6zaRGqH3FW0ogtMjP6xCFXX5NsgWJTaNIofI4=

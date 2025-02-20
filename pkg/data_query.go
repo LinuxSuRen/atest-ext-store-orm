@@ -66,9 +66,6 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 			if ok {
 				rowData.Key = colName
 				rowData.Value = string(b)
-			} else {
-				rowData.Key = colName
-				rowData.Value = val.(string)
 			}
 
 			// Append the map to our slice of maps.
