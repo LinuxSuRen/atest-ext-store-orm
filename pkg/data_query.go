@@ -43,6 +43,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	result = &server.DataQueryResult{
 		Data:  []*server.Pair{},
 		Items: make([]*server.Pairs, 0),
+		Meta:  &server.DataMeta{},
 	}
 
 	if rows == nil {
@@ -91,6 +92,16 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				rowData.Value = fmt.Sprintf("%f", v)
 			case time.Time:
 				rowData.Value = v.String()
+			case bool:
+				rowData.Value = fmt.Sprintf("%t", v)
+			case nil:
+				rowData.Value = "null"
+			case []int, []uint64, []uint32, []int32, []int64:
+				rowData.Value = fmt.Sprintf("%v", v)
+			case []float32, []float64:
+				rowData.Value = fmt.Sprintf("%v", v)
+			case []string:
+				rowData.Value = fmt.Sprintf("%v", v)
 			default:
 				fmt.Println("column", colName, "type", reflect.TypeOf(v))
 			}
@@ -103,5 +114,6 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 		})
 	}
 
+	// query database and tables
 	return
 }
