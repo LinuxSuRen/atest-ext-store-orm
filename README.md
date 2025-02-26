@@ -3,12 +3,12 @@
 # atest-ext-store-orm
 ORM database Store Extension for API Testing
 
-This project provides an ORM-based database store extension for API testing, simplifying data storage and retrieval operations. It supports various databases including SQLite, MySQL, and others, making it versatile for different testing environments.
+This project provides an ORM-based database store extension for API testing, simplifying data storage and retrieval operations. It supports various databases including SQLite, MySQL, PostgreSQL, TDengine, and others, making it versatile for different testing environments.
 
 ## Features
 - Simplified database operations using ORM.
 - Integration with API testing frameworks.
-- Support for multiple databases (SQLite, MySQL, etc.).
+- Support for multiple databases (SQLite, MySQL, PostgreSQL, TDengine, etc.).
 
 ## Usage
 To use this extension in your API testing project, follow these steps:

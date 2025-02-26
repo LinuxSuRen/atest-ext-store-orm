@@ -38,6 +38,12 @@ func NewRootCommand() (c *cobra.Command) {
 }
 
 func (o *option) runE(c *cobra.Command, args []string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			c.Println(r)
+		}
+	}()
+
 	if o.version {
 		c.Println(version.GetVersion())
 		c.Println(version.GetDate())

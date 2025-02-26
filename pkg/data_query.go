@@ -17,9 +17,11 @@ package pkg
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"gorm.io/gorm"
+	"reflect"
+	"time"
 )
 
 func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *server.DataQueryResult, err error) {
@@ -32,16 +34,29 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	if err != nil {
 		return
 	}
-	defer rows.Close()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return
-	}
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
 
 	result = &server.DataQueryResult{
 		Data:  []*server.Pair{},
 		Items: make([]*server.Pairs, 0),
+	}
+
+	if rows == nil {
+		if rows, err = db.ConnPool.QueryContext(ctx, query.Sql); err != nil {
+			return
+		} else if rows == nil {
+			fmt.Println("no rows found")
+			return
+		}
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return
 	}
 
 	for rows.Next() {
@@ -63,10 +78,21 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 		for i, colName := range columns {
 			rowData := &server.Pair{}
 			val := columnsData[i]
-			b, ok := val.([]byte)
-			if ok {
-				rowData.Key = colName
-				rowData.Value = string(b)
+
+			rowData.Key = colName
+			switch v := val.(type) {
+			case []byte:
+				rowData.Value = string(v)
+			case string:
+				rowData.Value = v
+			case int, uint64, uint32, int32, int64:
+				rowData.Value = fmt.Sprintf("%d", v)
+			case float32, float64:
+				rowData.Value = fmt.Sprintf("%f", v)
+			case time.Time:
+				rowData.Value = v.String()
+			default:
+				fmt.Println("column", colName, "type", reflect.TypeOf(v))
 			}
 
 			// Append the map to our slice of maps.
