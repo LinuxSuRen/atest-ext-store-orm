@@ -2,6 +2,9 @@ package pkg
 
 import (
 	"database/sql"
+	"fmt"
+	_ "github.com/taosdata/driver-go/v3/taosWS"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -19,13 +22,14 @@ func (d tdengineDialector) Name() string {
 
 func (d tdengineDialector) Initialize(db *gorm.DB) (err error) {
 	// Initialize the TDengine connection here
-	db.ConnPool, err = sql.Open("taosSql", d.DSN)
+	fmt.Println("init", d.DSN)
+	db.ConnPool, err = sql.Open("taosWS", d.DSN)
 	return
 }
 
 func (d tdengineDialector) Migrator(db *gorm.DB) gorm.Migrator {
 	// Return the TDengine migrator here
-	return nil
+	return &mysql.Migrator{}
 }
 
 func (d tdengineDialector) DataTypeOf(field *schema.Field) string {

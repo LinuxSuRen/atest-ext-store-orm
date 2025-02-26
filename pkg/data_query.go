@@ -17,7 +17,6 @@ package pkg
 
 import (
 	"context"
-
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"gorm.io/gorm"
 )
@@ -32,16 +31,23 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	if err != nil {
 		return
 	}
-	defer rows.Close()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return
-	}
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
 
 	result = &server.DataQueryResult{
 		Data:  []*server.Pair{},
 		Items: make([]*server.Pairs, 0),
+	}
+	if rows == nil {
+		return
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return
 	}
 
 	for rows.Next() {
