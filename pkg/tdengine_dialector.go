@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"database/sql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -18,6 +19,7 @@ func (d tdengineDialector) Name() string {
 
 func (d tdengineDialector) Initialize(db *gorm.DB) (err error) {
 	// Initialize the TDengine connection here
+	db.ConnPool, err = sql.Open("taosSql", d.DSN)
 	return
 }
 
