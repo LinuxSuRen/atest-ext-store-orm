@@ -85,8 +85,10 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				rowData.Value = string(v)
 			case string:
 				rowData.Value = v
-			case int, uint64:
+			case int, uint64, uint32, int32, int64:
 				rowData.Value = fmt.Sprintf("%d", v)
+			case float32, float64:
+				rowData.Value = fmt.Sprintf("%f", v)
 			case time.Time:
 				rowData.Value = v.String()
 			default:
