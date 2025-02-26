@@ -18,6 +18,7 @@ package pkg
 import (
 	"database/sql"
 	"fmt"
+
 	_ "github.com/taosdata/driver-go/v3/taosWS"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -38,7 +39,6 @@ func (d tdengineDialector) Name() string {
 
 func (d tdengineDialector) Initialize(db *gorm.DB) (err error) {
 	// Initialize the TDengine connection here
-	fmt.Println("init", d.DSN)
 	if db.ConnPool == nil {
 		db.ConnPool, err = sql.Open("taosWS", d.DSN)
 	}
