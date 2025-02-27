@@ -17,6 +17,7 @@ package pkg
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"gorm.io/gorm"
@@ -30,7 +31,68 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 		return
 	}
 
-	rows, err := db.Raw(query.Sql).Rows()
+	result = &server.DataQueryResult{
+		Data:  []*server.Pair{},
+		Items: make([]*server.Pairs, 0),
+		Meta:  &server.DataMeta{},
+	}
+
+	// query database and tables
+	queryDatabaseSql := "show databases"
+	var databaseResult *server.DataQueryResult
+	if databaseResult, err = sqlQuery(ctx, queryDatabaseSql, db); err == nil {
+		for _, table := range databaseResult.Items {
+			for _, item := range table.GetData() {
+				if item.Key == "Database" {
+					var found bool
+					for _, name := range result.Meta.Databases {
+						if name == item.Value {
+							found = true
+						}
+					}
+					if !found {
+						result.Meta.Databases = append(result.Meta.Databases, item.Value)
+					}
+				}
+			}
+		}
+	}
+
+	var row *sql.Row
+	if row = db.Raw("SELECT DATABASE() as name").Row(); row != nil {
+		if err = row.Scan(&result.Meta.CurrentDatabase); err == nil {
+			queryTableSql := "show tables"
+			var tableResult *server.DataQueryResult
+			if tableResult, err = sqlQuery(ctx, queryTableSql, db); err == nil {
+				for _, table := range tableResult.Items {
+					for _, item := range table.GetData() {
+						if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) {
+							var found bool
+							for _, name := range result.Meta.Tables {
+								if name == item.Value {
+									found = true
+								}
+							}
+							if !found {
+								result.Meta.Tables = append(result.Meta.Tables, item.Value)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// query data
+	var dataResult *server.DataQueryResult
+	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
+		result.Items = dataResult.Items
+	}
+	return
+}
+
+func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.DataQueryResult, err error) {
+	rows, err := db.Raw(sql).Rows()
 	if err != nil {
 		return
 	}
@@ -43,10 +105,11 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	result = &server.DataQueryResult{
 		Data:  []*server.Pair{},
 		Items: make([]*server.Pairs, 0),
+		Meta:  &server.DataMeta{},
 	}
 
 	if rows == nil {
-		if rows, err = db.ConnPool.QueryContext(ctx, query.Sql); err != nil {
+		if rows, err = db.ConnPool.QueryContext(ctx, sql); err != nil {
 			return
 		} else if rows == nil {
 			fmt.Println("no rows found")
@@ -91,6 +154,16 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				rowData.Value = fmt.Sprintf("%f", v)
 			case time.Time:
 				rowData.Value = v.String()
+			case bool:
+				rowData.Value = fmt.Sprintf("%t", v)
+			case nil:
+				rowData.Value = "null"
+			case []int, []uint64, []uint32, []int32, []int64:
+				rowData.Value = fmt.Sprintf("%v", v)
+			case []float32, []float64:
+				rowData.Value = fmt.Sprintf("%v", v)
+			case []string:
+				rowData.Value = fmt.Sprintf("%v", v)
 			default:
 				fmt.Println("column", colName, "type", reflect.TypeOf(v))
 			}
@@ -102,6 +175,5 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 			Data: result.Data,
 		})
 	}
-
 	return
 }
