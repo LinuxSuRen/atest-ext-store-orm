@@ -94,30 +94,39 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 }
 
 var dbCache map[string]*gorm.DB = make(map[string]*gorm.DB)
+var dbNameCache map[string]string = make(map[string]string)
 
-func (s *dbserver) getClient(ctx context.Context) (db *gorm.DB, err error) {
+func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db *gorm.DB, err error) {
 	store := remote.GetStoreFromContext(ctx)
 	if store == nil {
 		err = errors.New("no connect to database")
 	} else {
-		var ok bool
-		if db, ok = dbCache[store.Name]; ok && db != nil {
-			return
+		database := dbName
+		if database == "" {
+			if v, ok := store.Properties["database"]; ok && v != "" {
+				database = v
+			}
 		}
 
-		database := "atest"
 		driver := "mysql"
-		if v, ok := store.Properties["database"]; ok && v != "" {
-			database = v
-		}
 		if v, ok := store.Properties["driver"]; ok && v != "" {
 			driver = v
 		}
 
+		var ok bool
+		if db, ok = dbCache[store.Name]; ok && db != nil && dbNameCache[store.Name] == database {
+			return
+		}
+
 		if db, err = createDB(store.Username, store.Password, store.URL, database, driver); err == nil {
 			dbCache[store.Name] = db
+			dbNameCache[store.Name] = database
 		}
 	}
+	return
+}
+func (s *dbserver) getClient(ctx context.Context) (db *gorm.DB, err error) {
+	db, err = s.getClientWithDatabase(ctx, "")
 	return
 }
 
