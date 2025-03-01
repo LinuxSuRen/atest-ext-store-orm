@@ -27,7 +27,7 @@ import (
 
 func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *server.DataQueryResult, err error) {
 	var db *gorm.DB
-	if db, err = s.getClient(ctx); err != nil {
+	if db, err = s.getClientWithDatabase(ctx, query.Key); err != nil {
 		return
 	}
 
