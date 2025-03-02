@@ -323,3 +323,18 @@ func TestSQLite(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestTdEngine(t *testing.T) {
+	remoteServer := NewRemoteServer(10)
+	assert.NotNil(t, remoteServer)
+	defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
+		URL:      "127.0.0.1:6041",
+		Username: "root",
+		Password: "taosdata",
+		Properties: map[string]string{
+			"driver": "tdengine",
+		},
+	})
+	_, err := remoteServer.Query(defaultCtx, &server.DataQuery{})
+	assert.Error(t, err)
+}

@@ -40,9 +40,16 @@ services:
       interval: 3s
       timeout: 60s
       retries: 10
-      start_period: 3s
     ports:
       - "3306:3306"
 
+  tdengine:
+    image: tdengine/tdengine:3.3.5.8
+    environment:
+      TAOS_ROOT_PASSWORD: "root"
+    ports:
+      - "6030:6030"       # REST API port
+      - "6031:6031"       # client port
+      - "6041:6041"       # cluster port
 volumes:
   cache:

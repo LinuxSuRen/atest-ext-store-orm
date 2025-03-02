@@ -1,5 +1,5 @@
 /*
-Copyright 2023-2024 API Testing Authors.
+Copyright 2023-2025 API Testing Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,6 +55,9 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dsn string
 	switch driver {
 	case "mysql", "":
+		if !strings.Contains(address, ":") {
+			address = fmt.Sprintf("%s:%d", address, 3306)
+		}
 		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=true", user, password, address, database)
 		dialector = mysql.Open(dsn)
 	case "sqlite":
@@ -93,8 +96,8 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	return
 }
 
-var dbCache map[string]*gorm.DB = make(map[string]*gorm.DB)
-var dbNameCache map[string]string = make(map[string]string)
+var dbCache = make(map[string]*gorm.DB)
+var dbNameCache = make(map[string]string)
 
 func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db *gorm.DB, err error) {
 	store := remote.GetStoreFromContext(ctx)
@@ -187,19 +190,6 @@ func (s *dbserver) GetTestSuite(ctx context.Context, suite *remote.TestSuite) (r
 				reply.Items = testcases.Data
 			}
 		}
-	}
-	return
-}
-
-func (s *dbserver) GetHistoryTestSuite(ctx context.Context, suite *remote.HistoryTestSuite) (reply *remote.HistoryTestSuite, err error) {
-	query := &HistoryTestResult{}
-	var db *gorm.DB
-	if db, err = s.getClient(ctx); err != nil {
-		return
-	}
-
-	if err = db.Find(&query, nameQuery, suite.HistorySuiteName).Error; err == nil {
-		reply = ConvertToGRPCHistoryTestSuite(query)
 	}
 	return
 }
