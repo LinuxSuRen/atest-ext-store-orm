@@ -72,7 +72,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, database, port)
 		dialector = postgres.Open(dsn)
 	case "tdengine":
-		dsn = fmt.Sprintf("%s:%s@ws(%s)/", user, password, address)
+		dsn = fmt.Sprintf("%s:%s@ws(%s)/%s", user, password, address, database)
 		dialector = NewTDengineDialector(dsn)
 	default:
 		err = fmt.Errorf("invalid database driver %q", driver)
@@ -115,6 +115,7 @@ func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db
 		if v, ok := store.Properties["driver"]; ok && v != "" {
 			driver = v
 		}
+		log.Printf("get client from driver[%s] in database [%s]", driver, database)
 
 		var ok bool
 		if db, ok = dbCache[store.Name]; ok && db != nil && dbNameCache[store.Name] == database {

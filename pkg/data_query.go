@@ -43,7 +43,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	if databaseResult, err = sqlQuery(ctx, queryDatabaseSql, db); err == nil {
 		for _, table := range databaseResult.Items {
 			for _, item := range table.GetData() {
-				if item.Key == "Database" {
+				if item.Key == "Database" || item.Key == "name" {
 					var found bool
 					for _, name := range result.Meta.Databases {
 						if name == item.Value {
@@ -60,23 +60,25 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 	var row *sql.Row
 	if row = db.Raw("SELECT DATABASE() as name").Row(); row != nil {
-		if err = row.Scan(&result.Meta.CurrentDatabase); err == nil {
-			queryTableSql := "show tables"
-			var tableResult *server.DataQueryResult
-			if tableResult, err = sqlQuery(ctx, queryTableSql, db); err == nil {
-				for _, table := range tableResult.Items {
-					for _, item := range table.GetData() {
-						if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) {
-							var found bool
-							for _, name := range result.Meta.Tables {
-								if name == item.Value {
-									found = true
-								}
-							}
-							if !found {
-								result.Meta.Tables = append(result.Meta.Tables, item.Value)
-							}
+		_ = row.Scan(&result.Meta.CurrentDatabase)
+	} else {
+		result.Meta.CurrentDatabase = query.Key
+	}
+
+	queryTableSql := "show tables"
+	var tableResult *server.DataQueryResult
+	if tableResult, err = sqlQuery(ctx, queryTableSql, db); err == nil {
+		for _, table := range tableResult.Items {
+			for _, item := range table.GetData() {
+				if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) || item.Key == "table_name" {
+					var found bool
+					for _, name := range result.Meta.Tables {
+						if name == item.Value {
+							found = true
 						}
+					}
+					if !found {
+						result.Meta.Tables = append(result.Meta.Tables, item.Value)
 					}
 				}
 			}
