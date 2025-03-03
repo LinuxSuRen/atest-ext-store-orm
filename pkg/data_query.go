@@ -38,7 +38,6 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	}
 
 	// query database and tables
-	queryDatabaseSql := "show databases"
 	var databaseResult *server.DataQueryResult
 	if databaseResult, err = sqlQuery(ctx, queryDatabaseSql, db); err == nil {
 		for _, table := range databaseResult.Items {
@@ -70,7 +69,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	if tableResult, err = sqlQuery(ctx, queryTableSql, db); err == nil {
 		for _, table := range tableResult.Items {
 			for _, item := range table.GetData() {
-				if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) || item.Key == "table_name" {
+				if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) || item.Key == "table_name" || item.Key == "Tables" {
 					var found bool
 					for _, name := range result.Meta.Tables {
 						if name == item.Value {
@@ -179,3 +178,5 @@ func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.Data
 	}
 	return
 }
+
+const queryDatabaseSql = "show databases"

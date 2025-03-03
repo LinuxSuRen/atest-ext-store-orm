@@ -54,7 +54,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dialector gorm.Dialector
 	var dsn string
 	switch driver {
-	case "mysql", "":
+	case "mysql", "", "greptime":
 		if !strings.Contains(address, ":") {
 			address = fmt.Sprintf("%s:%d", address, 3306)
 		}
@@ -88,7 +88,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		return
 	}
 
-	if driver != "tdengine" {
+	if driver != "tdengine" && driver != "greptime" {
 		err = errors.Join(err, db.AutoMigrate(&TestCase{}))
 		err = errors.Join(err, db.AutoMigrate(&TestSuite{}))
 		err = errors.Join(err, db.AutoMigrate(&HistoryTestResult{}))
@@ -472,12 +472,19 @@ func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase
 }
 
 func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.ExtensionStatus, err error) {
-	_, vErr := s.ListTestSuite(ctx, in)
 	reply = &server.ExtensionStatus{
-		Ready:   vErr == nil,
-		Message: util.OKOrErrorMessage(vErr),
+		Ready:   false,
 		Version: version.GetVersion(),
 	}
+
+	var vErr error
+	var db *gorm.DB
+	if db, err = s.getClient(ctx); err == nil {
+		_, vErr = db.ConnPool.QueryContext(ctx, queryDatabaseSql)
+	}
+
+	reply.Ready = vErr == nil
+	reply.Message = util.OKOrErrorMessage(vErr)
 	return
 }
 
