@@ -22,6 +22,7 @@ import (
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"gorm.io/gorm"
 	"reflect"
+	"sort"
 	"time"
 )
 
@@ -55,6 +56,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				}
 			}
 		}
+		sort.Strings(result.Meta.Databases)
 	}
 
 	var row *sql.Row
@@ -82,6 +84,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 				}
 			}
 		}
+		sort.Strings(result.Meta.Tables)
 	}
 
 	// query data
