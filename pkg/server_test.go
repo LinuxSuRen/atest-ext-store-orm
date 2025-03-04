@@ -85,9 +85,8 @@ func TestNewRemoteServer(t *testing.T) {
 	})
 
 	t.Run("Verify", func(t *testing.T) {
-		reply, err := remoteServer.Verify(defaultCtx, nil)
-		assert.NoError(t, err)
-		assert.False(t, reply.Ready)
+		_, err := remoteServer.Verify(defaultCtx, nil)
+		assert.Error(t, err)
 	})
 
 	t.Run("CreateTestCaseHistory", func(t *testing.T) {
