@@ -21,15 +21,21 @@ import (
 	"fmt"
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"gorm.io/gorm"
+	"log"
 	"reflect"
+	"sort"
+	"strings"
 	"time"
 )
 
 func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *server.DataQueryResult, err error) {
 	var db *gorm.DB
-	if db, err = s.getClientWithDatabase(ctx, query.Key); err != nil {
+	var dbQuery DataQuery
+	if dbQuery, err = s.getClientWithDatabase(ctx, query.Key); err != nil {
 		return
 	}
+
+	db = dbQuery.GetClient()
 
 	result = &server.DataQueryResult{
 		Data:  []*server.Pair{},
@@ -38,52 +44,25 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	}
 
 	// query database and tables
-	queryDatabaseSql := "show databases"
-	var databaseResult *server.DataQueryResult
-	if databaseResult, err = sqlQuery(ctx, queryDatabaseSql, db); err == nil {
-		for _, table := range databaseResult.Items {
-			for _, item := range table.GetData() {
-				if item.Key == "Database" {
-					var found bool
-					for _, name := range result.Meta.Databases {
-						if name == item.Value {
-							found = true
-						}
-					}
-					if !found {
-						result.Meta.Databases = append(result.Meta.Databases, item.Value)
-					}
-				}
-			}
+	if result.Meta.Databases, err = dbQuery.GetDatabases(ctx); err != nil {
+		log.Printf("failed to query databases: %v\n", err)
+	}
+
+	if result.Meta.CurrentDatabase = query.Key; query.Key == "" {
+		if result.Meta.CurrentDatabase, err = dbQuery.GetCurrentDatabase(); err != nil {
+			log.Printf("failed to query current database: %v\n", err)
 		}
 	}
 
-	var row *sql.Row
-	if row = db.Raw("SELECT DATABASE() as name").Row(); row != nil {
-		if err = row.Scan(&result.Meta.CurrentDatabase); err == nil {
-			queryTableSql := "show tables"
-			var tableResult *server.DataQueryResult
-			if tableResult, err = sqlQuery(ctx, queryTableSql, db); err == nil {
-				for _, table := range tableResult.Items {
-					for _, item := range table.GetData() {
-						if item.Key == fmt.Sprintf("Tables_in_%s", result.Meta.CurrentDatabase) {
-							var found bool
-							for _, name := range result.Meta.Tables {
-								if name == item.Value {
-									found = true
-								}
-							}
-							if !found {
-								result.Meta.Tables = append(result.Meta.Tables, item.Value)
-							}
-						}
-					}
-				}
-			}
-		}
+	if result.Meta.Tables, err = dbQuery.GetTables(ctx, result.Meta.CurrentDatabase); err != nil {
+		log.Printf("failed to query tables: %v\n", err)
 	}
 
 	// query data
+	if query.Sql == "" {
+		return
+	}
+
 	var dataResult *server.DataQueryResult
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
@@ -176,4 +155,92 @@ func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.Data
 		})
 	}
 	return
+}
+
+const queryDatabaseSql = "show databases"
+
+type DataQuery interface {
+	GetDatabases(context.Context) (databases []string, err error)
+	GetTables(ctx context.Context, currentDatabase string) (tables []string, err error)
+	GetCurrentDatabase() (string, error)
+	GetClient() *gorm.DB
+}
+
+type commonDataQuery struct {
+	showDatabases, showTables, currentDatabase string
+	db                                         *gorm.DB
+}
+
+var _ DataQuery = &commonDataQuery{}
+
+func NewCommonDataQuery(showDatabases, showTables, currentDatabase string, db *gorm.DB) DataQuery {
+	return &commonDataQuery{
+		showDatabases:   showDatabases,
+		showTables:      showTables,
+		currentDatabase: currentDatabase,
+		db:              db,
+	}
+}
+
+func (q *commonDataQuery) GetDatabases(ctx context.Context) (databases []string, err error) {
+	var databaseResult *server.DataQueryResult
+	if databaseResult, err = sqlQuery(ctx, q.showDatabases, q.db); err == nil {
+		for _, table := range databaseResult.Items {
+			for _, item := range table.GetData() {
+				if item.Key == "Database" || item.Key == "name" {
+					var found bool
+					for _, name := range databases {
+						if name == item.Value {
+							found = true
+						}
+					}
+					if !found {
+						databases = append(databases, item.Value)
+					}
+				}
+			}
+		}
+		sort.Strings(databases)
+	}
+	return
+}
+
+func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string) (tables []string, err error) {
+	showTables := q.showTables
+	if strings.Contains(showTables, "%s") {
+		showTables = fmt.Sprintf(showTables, currentDatabase)
+	}
+
+	var tableResult *server.DataQueryResult
+	if tableResult, err = sqlQuery(ctx, showTables, q.db); err == nil {
+		for _, table := range tableResult.Items {
+			for _, item := range table.GetData() {
+				if item.Key == fmt.Sprintf("Tables_in_%s", currentDatabase) || item.Key == "table_name" ||
+					item.Key == "Tables" || item.Key == "tablename" {
+					var found bool
+					for _, name := range tables {
+						if name == item.Value {
+							found = true
+						}
+					}
+					if !found {
+						tables = append(tables, item.Value)
+					}
+				}
+			}
+		}
+		sort.Strings(tables)
+	}
+	return
+}
+func (q *commonDataQuery) GetCurrentDatabase() (current string, err error) {
+	var row *sql.Row
+	if row = q.db.Raw(q.currentDatabase).Row(); row != nil {
+		err = row.Scan(&current)
+	}
+	return
+}
+
+func (q *commonDataQuery) GetClient() *gorm.DB {
+	return q.db
 }

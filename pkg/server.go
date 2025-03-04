@@ -54,7 +54,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dialector gorm.Dialector
 	var dsn string
 	switch driver {
-	case "mysql", "":
+	case "mysql", "", "greptime":
 		if !strings.Contains(address, ":") {
 			address = fmt.Sprintf("%s:%d", address, 3306)
 		}
@@ -72,7 +72,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, database, port)
 		dialector = postgres.Open(dsn)
 	case "tdengine":
-		dsn = fmt.Sprintf("%s:%s@ws(%s)/", user, password, address)
+		dsn = fmt.Sprintf("%s:%s@ws(%s)/%s", user, password, address, database)
 		dialector = NewTDengineDialector(dsn)
 	default:
 		err = fmt.Errorf("invalid database driver %q", driver)
@@ -88,7 +88,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 		return
 	}
 
-	if driver != "tdengine" {
+	if driver != "tdengine" && driver != "greptime" {
 		err = errors.Join(err, db.AutoMigrate(&TestCase{}))
 		err = errors.Join(err, db.AutoMigrate(&TestSuite{}))
 		err = errors.Join(err, db.AutoMigrate(&HistoryTestResult{}))
@@ -99,7 +99,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 var dbCache = make(map[string]*gorm.DB)
 var dbNameCache = make(map[string]string)
 
-func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db *gorm.DB, err error) {
+func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (dbQuery DataQuery, err error) {
 	store := remote.GetStoreFromContext(ctx)
 	if store == nil {
 		err = errors.New("no connect to database")
@@ -115,21 +115,35 @@ func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db
 		if v, ok := store.Properties["driver"]; ok && v != "" {
 			driver = v
 		}
+		log.Printf("get client from driver[%s] in database [%s]", driver, database)
 
 		var ok bool
-		if db, ok = dbCache[store.Name]; ok && db != nil && dbNameCache[store.Name] == database {
-			return
+		var db *gorm.DB
+		if db, ok = dbCache[store.Name]; (ok && db != nil && dbNameCache[store.Name] != database) || !ok {
+			if db, err = createDB(store.Username, store.Password, store.URL, database, driver); err == nil {
+				dbCache[store.Name] = db
+				dbNameCache[store.Name] = database
+			} else {
+				return
+			}
 		}
 
-		if db, err = createDB(store.Username, store.Password, store.URL, database, driver); err == nil {
-			dbCache[store.Name] = db
-			dbNameCache[store.Name] = database
+		switch driver {
+		case "postgres":
+			dbQuery = NewCommonDataQuery("select table_catalog as name from information_schema.tables",
+				`SELECT table_name FROM information_schema.tables WHERE table_catalog = '%s' and table_schema != 'pg_catalog' and table_schema != 'information_schema'`, "SELECT current_database() as name", db)
+		default:
+			dbQuery = NewCommonDataQuery("show databases", "show tables", "SELECT DATABASE() as name", db)
 		}
 	}
 	return
 }
+
 func (s *dbserver) getClient(ctx context.Context) (db *gorm.DB, err error) {
-	db, err = s.getClientWithDatabase(ctx, "")
+	var dbQuery DataQuery
+	if dbQuery, err = s.getClientWithDatabase(ctx, ""); err == nil {
+		db = dbQuery.GetClient()
+	}
 	return
 }
 
@@ -471,12 +485,19 @@ func (s *dbserver) DeleteAllHistoryTestCase(ctx context.Context, historyTestCase
 }
 
 func (s *dbserver) Verify(ctx context.Context, in *server.Empty) (reply *server.ExtensionStatus, err error) {
-	_, vErr := s.ListTestSuite(ctx, in)
 	reply = &server.ExtensionStatus{
-		Ready:   vErr == nil,
-		Message: util.OKOrErrorMessage(vErr),
+		Ready:   false,
 		Version: version.GetVersion(),
 	}
+
+	var vErr error
+	var dbQuery DataQuery
+	if dbQuery, err = s.getClientWithDatabase(ctx, ""); err == nil {
+		_, vErr = dbQuery.GetDatabases(ctx)
+	}
+
+	reply.Ready = vErr == nil
+	reply.Message = util.OKOrErrorMessage(vErr)
 	return
 }
 

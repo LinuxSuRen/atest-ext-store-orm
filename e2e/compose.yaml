@@ -7,6 +7,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      greptimedb:
+        condition: service_healthy
+      tdengine:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       extension:
         condition: service_started
     volumes:
@@ -15,6 +21,9 @@ services:
         target: /var/data
     links:
       - mysql
+      - greptimedb
+      - tdengine
+      - postgres
   extension:
     build:
       context: ..
@@ -22,13 +31,9 @@ services:
       args:
         - "GO_BUILDER=ghcr.io/linuxsuren/library/golang:1.22"
         - "BASE_IMAGE=ghcr.io/linuxsuren/library/alpine:3.12"
-    ports:
-      - "7071:7071"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    links:
-      - mysql
+        - GOPROXY=${GOPROXY}
+#    ports:
+#      - "7071:7071"
   mysql:
     image: ghcr.io/linuxsuren/library/mysql:8.2.0
     command: --default-authentication-plugin=mysql_native_password
@@ -38,18 +43,44 @@ services:
     healthcheck:
       test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/3306"]
       interval: 3s
-      timeout: 60s
-      retries: 10
-    ports:
-      - "3306:3306"
+      timeout: 180s
+      retries: 60
+#    ports:
+#      - "3306:3306"
 
   tdengine:
-    image: tdengine/tdengine:3.3.5.8
+    image: ghcr.io/linuxsuren/tdengine/tdengine:3.3.3.0
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/tdengine/6041"]
+      interval: 3s
+      timeout: 180s
+      retries: 30
+#    ports:
+#      - "6030:6030"       # REST API port
+#      - "6031:6031"       # client port
+#      - "6041:6041"       # cluster port
+
+  greptimedb:
+    image: ghcr.io/linuxsuren/greptime/greptimedb:v0.12.0
+    command: standalone start --mysql-addr=0.0.0.0:4002
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/greptimedb/4002"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+#    ports:
+#      - "4002:4002"
+
+  postgres:
+    image: ghcr.io/linuxsuren/library/postgres:16.0
     environment:
-      TAOS_ROOT_PASSWORD: "root"
-    ports:
-      - "6030:6030"       # REST API port
-      - "6031:6031"       # client port
-      - "6041:6041"       # cluster port
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: atest
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/5432"]
+      interval: 3s
+      timeout: 30s
+      retries: 10
 volumes:
   cache:
