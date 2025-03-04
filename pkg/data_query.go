@@ -88,6 +88,10 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	}
 
 	// query data
+	if query.Sql == "" {
+		return
+	}
+
 	var dataResult *server.DataQueryResult
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
