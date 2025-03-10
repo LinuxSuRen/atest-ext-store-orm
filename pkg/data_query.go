@@ -19,13 +19,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/linuxsuren/api-testing/pkg/server"
-	"gorm.io/gorm"
 	"log"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/linuxsuren/api-testing/pkg/server"
+	"gorm.io/gorm"
 )
 
 func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *server.DataQueryResult, err error) {
@@ -64,8 +65,10 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	}
 
 	var dataResult *server.DataQueryResult
+	now := time.Now()
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
+		result.Meta.Duration = time.Since(now).String()
 	}
 	return
 }

@@ -5,7 +5,7 @@ go 1.22.4
 toolchain go1.22.6
 
 require (
-	github.com/linuxsuren/api-testing v0.0.19-0.20250226135405-35c828fe2524
+	github.com/linuxsuren/api-testing v0.0.19-0.20250310093028-dd08c128ca0e
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/taosdata/driver-go/v3 v3.6.0
@@ -34,6 +34,7 @@ require (
 	github.com/cucumber/godog v0.12.6 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/evanphx/json-patch v0.5.2 // indirect
 	github.com/expr-lang/expr v1.15.6 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
