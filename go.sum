@@ -31,6 +31,8 @@ github.com/cucumber/messages-go/v16 v16.0.1/go.mod h1:EJcyR5Mm5ZuDsKJnT2N9KRnBK3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/evanphx/json-patch v0.5.2 h1:xVCHIVMUu1wtM/VkR9jVZ45N3FhZfYMMYGorLCR8P3k=
+github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
 github.com/expr-lang/expr v1.15.6 h1:dQFgzj5DBu3wnUz8+PGLZdPMpefAvxaCFTNM3iSjkGA=
 github.com/expr-lang/expr v1.15.6/go.mod h1:uCkhfG+x7fcZ5A5sXHKuQ07jGZRl6J0FCAaf2k4PtVQ=
 github.com/flopp/go-findfont v0.1.0 h1:lPn0BymDUtJo+ZkV01VS3661HL6F4qFlkhcJN55u6mU=
@@ -108,6 +110,7 @@ github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a h1:bbPeKD0xmW/
 github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a/go.mod h1:5TJZWKEWniPve33vlWYSoGYefn3gLQRzjfDlhSJ9ZKM=
 github.com/jackc/pgx/v5 v5.4.3 h1:cxFyXhxlvAifxnkKKdlxv8XqUf59tDlYjnV5YYfsJJY=
 github.com/jackc/pgx/v5 v5.4.3/go.mod h1:Ig06C2Vu0t5qXC60W8sqIthScaEnFvojjj9dSljmHRA=
+github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jhump/protoreflect v1.15.3 h1:6SFRuqU45u9hIZPJAoZ8c28T3nK64BNdp9w6jFonzls=
 github.com/jhump/protoreflect v1.15.3/go.mod h1:4ORHmSBmlCW8fh3xHmJMGyul1zNqZK4Elxc8qKP+p1k=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
@@ -131,6 +134,8 @@ github.com/linuxsuren/api-testing v0.0.19-0.20250220092001-ed58adc30f20 h1:DiT8l
 github.com/linuxsuren/api-testing v0.0.19-0.20250220092001-ed58adc30f20/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
 github.com/linuxsuren/api-testing v0.0.19-0.20250226135405-35c828fe2524 h1:qJfmOpBK/IWEYIoaC1r/CTaYK8k6xmErjhFlduBJOxA=
 github.com/linuxsuren/api-testing v0.0.19-0.20250226135405-35c828fe2524/go.mod h1:SA9cvDE/Hg0QUTgbL5g9tY9ye65beYyfK3Y/y6x0B5k=
+github.com/linuxsuren/api-testing v0.0.19-0.20250310093028-dd08c128ca0e h1:3dVXBA+OnZAaIbTNSAB5IHlbdYifORDTzkAUp7R/vnc=
+github.com/linuxsuren/api-testing v0.0.19-0.20250310093028-dd08c128ca0e/go.mod h1:igcyUJb5Q463tMpdEJxgURLLPR2pTcV7HoRyuvyP/2Y=
 github.com/linuxsuren/go-fake-runtime v0.0.4 h1:y+tvBuw6MKTCav8Bo5HWwaXhBx1Z//VAvqI3gpOWqvw=
 github.com/linuxsuren/go-fake-runtime v0.0.4/go.mod h1:zmh6J78hSnWZo68faMA2eKOdaEp8eFbERHi3ZB9xHCQ=
 github.com/linuxsuren/go-service v0.0.0-20231225060426-efabcd3a5161 h1:dSL/ah6zaRGqH3FW0ogtMjP6xCFXX5NsgWJTaNIofI4=
