@@ -5,7 +5,7 @@ go 1.22.4
 toolchain go1.22.6
 
 require (
-	github.com/linuxsuren/api-testing v0.0.19-0.20250310093028-dd08c128ca0e
+	github.com/linuxsuren/api-testing v0.0.19-0.20250312132236-e3e7357d6687
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/taosdata/driver-go/v3 v3.6.0
