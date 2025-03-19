@@ -64,6 +64,8 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 		return
 	}
 
+	result.Meta.Labels = dbQuery.GetLabels(ctx, query.Sql)
+
 	var dataResult *server.DataQueryResult
 	now := time.Now()
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
@@ -166,6 +168,7 @@ type DataQuery interface {
 	GetDatabases(context.Context) (databases []string, err error)
 	GetTables(ctx context.Context, currentDatabase string) (tables []string, err error)
 	GetCurrentDatabase() (string, error)
+	GetLabels(context.Context, string) map[string]string
 	GetClient() *gorm.DB
 }
 
@@ -236,10 +239,26 @@ func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string)
 	}
 	return
 }
+
 func (q *commonDataQuery) GetCurrentDatabase() (current string, err error) {
 	var row *sql.Row
 	if row = q.db.Raw(q.currentDatabase).Row(); row != nil {
 		err = row.Scan(&current)
+	}
+	return
+}
+
+func (q *commonDataQuery) GetLabels(ctx context.Context, sql string) (metadata map[string]string) {
+	if databaseResult, err := sqlQuery(ctx, fmt.Sprintf("explain %s", sql), q.db); err == nil {
+		if len(databaseResult.Items) != 1 {
+			metadata = make(map[string]string)
+			for _, data := range databaseResult.Items[0].Data {
+				switch data.Key {
+				case "type":
+					metadata["sql_type"] = data.Value
+				}
+			}
+		}
 	}
 	return
 }
