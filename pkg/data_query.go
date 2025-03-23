@@ -64,6 +64,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 		return
 	}
 
+	query.Sql = dbQuery.GetInnerSQL().ToNativeSQL(query.Sql)
 	result.Meta.Labels = dbQuery.GetLabels(ctx, query.Sql)
 
 	var dataResult *server.DataQueryResult
@@ -170,27 +171,27 @@ type DataQuery interface {
 	GetCurrentDatabase() (string, error)
 	GetLabels(context.Context, string) map[string]string
 	GetClient() *gorm.DB
+	GetInnerSQL() InnerSQL
 }
 
 type commonDataQuery struct {
-	showDatabases, showTables, currentDatabase string
-	db                                         *gorm.DB
+	showTables string
+	db         *gorm.DB
+	innerSQL   InnerSQL
 }
 
 var _ DataQuery = &commonDataQuery{}
 
-func NewCommonDataQuery(showDatabases, showTables, currentDatabase string, db *gorm.DB) DataQuery {
+func NewCommonDataQuery(innerSQL InnerSQL, db *gorm.DB) DataQuery {
 	return &commonDataQuery{
-		showDatabases:   showDatabases,
-		showTables:      showTables,
-		currentDatabase: currentDatabase,
-		db:              db,
+		innerSQL: innerSQL,
+		db:       db,
 	}
 }
 
 func (q *commonDataQuery) GetDatabases(ctx context.Context) (databases []string, err error) {
 	var databaseResult *server.DataQueryResult
-	if databaseResult, err = sqlQuery(ctx, q.showDatabases, q.db); err == nil {
+	if databaseResult, err = sqlQuery(ctx, q.GetInnerSQL().ToNativeSQL(innerShowDatabases), q.db); err == nil {
 		for _, table := range databaseResult.Items {
 			for _, item := range table.GetData() {
 				if item.Key == "Database" || item.Key == "name" {
@@ -212,7 +213,7 @@ func (q *commonDataQuery) GetDatabases(ctx context.Context) (databases []string,
 }
 
 func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string) (tables []string, err error) {
-	showTables := q.showTables
+	showTables := q.GetInnerSQL().ToNativeSQL(innerShowTables)
 	if strings.Contains(showTables, "%s") {
 		showTables = fmt.Sprintf(showTables, currentDatabase)
 	}
@@ -242,7 +243,7 @@ func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string)
 
 func (q *commonDataQuery) GetCurrentDatabase() (current string, err error) {
 	var row *sql.Row
-	if row = q.db.Raw(q.currentDatabase).Row(); row != nil {
+	if row = q.db.Raw(q.GetInnerSQL().ToNativeSQL(innerCurrentDB)).Row(); row != nil {
 		err = row.Scan(&current)
 	}
 	return
@@ -265,4 +266,8 @@ func (q *commonDataQuery) GetLabels(ctx context.Context, sql string) (metadata m
 
 func (q *commonDataQuery) GetClient() *gorm.DB {
 	return q.db
+}
+
+func (q *commonDataQuery) GetInnerSQL() InnerSQL {
+	return q.innerSQL
 }

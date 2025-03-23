@@ -128,13 +128,7 @@ func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db
 			}
 		}
 
-		switch driver {
-		case "postgres":
-			dbQuery = NewCommonDataQuery("select table_catalog as name from information_schema.tables",
-				`SELECT table_name FROM information_schema.tables WHERE table_catalog = '%s' and table_schema != 'pg_catalog' and table_schema != 'information_schema'`, "SELECT current_database() as name", db)
-		default:
-			dbQuery = NewCommonDataQuery("show databases", "show tables", "SELECT DATABASE() as name", db)
-		}
+		dbQuery = NewCommonDataQuery(GetInnerSQL(driver), db)
 	}
 	return
 }
