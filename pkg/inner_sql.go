@@ -23,15 +23,15 @@ type InnerSQL interface {
 }
 
 const (
-	innerSelectTable_  = "@selectTable_"
-	innerShowDatabases = "@showDatabases"
-	innerShowTables    = "@showTables"
-	innerCurrentDB     = "@currentDB"
+	InnerSelectTable_  = "@selectTable_"
+	InnerShowDatabases = "@showDatabases"
+	InnerShowTables    = "@showTables"
+	InnerCurrentDB     = "@currentDB"
 )
 
 func GetInnerSQL(dialect string) InnerSQL {
 	switch dialect {
-	case "postgres":
+	case DialectorPostgres:
 		return &postgresDialect{}
 	default:
 		return &mysqlDialect{}
@@ -42,13 +42,13 @@ type mysqlDialect struct {
 }
 
 func (m *mysqlDialect) ToNativeSQL(query string) (sql string) {
-	if strings.HasPrefix(query, innerSelectTable_) {
-		sql = "SELECT * FROM " + strings.ReplaceAll(query, innerSelectTable_, "")
-	} else if query == innerShowDatabases {
+	if strings.HasPrefix(query, InnerSelectTable_) {
+		sql = "SELECT * FROM " + strings.ReplaceAll(query, InnerSelectTable_, "")
+	} else if query == InnerShowDatabases {
 		sql = "SHOW DATABASES"
-	} else if query == innerShowTables {
+	} else if query == InnerShowTables {
 		sql = "SHOW TABLES"
-	} else if query == innerCurrentDB {
+	} else if query == InnerCurrentDB {
 		sql = "SELECT DATABASE() as name"
 	} else {
 		sql = query
@@ -60,13 +60,13 @@ type postgresDialect struct {
 }
 
 func (p *postgresDialect) ToNativeSQL(query string) (sql string) {
-	if strings.HasPrefix(query, innerSelectTable_) {
-		sql = `SELECT * FROM "` + strings.ReplaceAll(query, innerSelectTable_, "") + `"`
-	} else if query == innerShowDatabases {
+	if strings.HasPrefix(query, InnerSelectTable_) {
+		sql = `SELECT * FROM "` + strings.ReplaceAll(query, InnerSelectTable_, "") + `"`
+	} else if query == InnerShowDatabases {
 		sql = "SELECT table_catalog as name FROM information_schema.tables"
-	} else if query == innerShowTables {
+	} else if query == InnerShowTables {
 		sql = `SELECT table_name FROM information_schema.tables WHERE table_catalog = '%s' and table_schema != 'pg_catalog' and table_schema != 'information_schema'`
-	} else if query == innerCurrentDB {
+	} else if query == InnerCurrentDB {
 		sql = "SELECT current_database() as name"
 	} else {
 		sql = query

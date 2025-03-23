@@ -136,7 +136,7 @@ func TestNewRemoteServer(t *testing.T) {
 		assert.NotNil(t, remoteServer)
 		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 			Properties: map[string]string{
-				"driver": "mysql",
+				"driver": DialectorMySQL,
 			},
 		})
 		_, err := remoteServer.ListTestSuite(defaultCtx, &server.Empty{})
@@ -148,7 +148,7 @@ func TestNewRemoteServer(t *testing.T) {
 		assert.NotNil(t, remoteServer)
 		defaultCtx := remote.WithIncomingStoreContext(context.TODO(), &atest.Store{
 			Properties: map[string]string{
-				"driver": "postgres",
+				"driver": DialectorPostgres,
 			},
 			URL: "0.0.0.0:-123",
 		})

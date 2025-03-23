@@ -54,7 +54,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	var dialector gorm.Dialector
 	var dsn string
 	switch driver {
-	case "mysql", "", "greptime":
+	case DialectorMySQL, "", "greptime":
 		if !strings.Contains(address, ":") {
 			address = fmt.Sprintf("%s:%d", address, 3306)
 		}
@@ -63,7 +63,7 @@ func createDB(user, password, address, database, driver string) (db *gorm.DB, er
 	case "sqlite":
 		dsn = fmt.Sprintf("%s.db", database)
 		dialector = sqlite.Open(dsn)
-	case "postgres":
+	case DialectorPostgres:
 		obj := strings.Split(address, ":")
 		host, port := obj[0], "5432"
 		if len(obj) > 1 {
@@ -111,7 +111,7 @@ func (s *dbserver) getClientWithDatabase(ctx context.Context, dbName string) (db
 			}
 		}
 
-		driver := "mysql"
+		driver := DialectorMySQL
 		if v, ok := store.Properties["driver"]; ok && v != "" {
 			driver = v
 		}

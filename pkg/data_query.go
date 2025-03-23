@@ -169,15 +169,14 @@ type DataQuery interface {
 	GetDatabases(context.Context) (databases []string, err error)
 	GetTables(ctx context.Context, currentDatabase string) (tables []string, err error)
 	GetCurrentDatabase() (string, error)
-	GetLabels(context.Context, string) map[string]string
+	GetLabels(context.Context, string) []*server.Pair
 	GetClient() *gorm.DB
 	GetInnerSQL() InnerSQL
 }
 
 type commonDataQuery struct {
-	showTables string
-	db         *gorm.DB
-	innerSQL   InnerSQL
+	db       *gorm.DB
+	innerSQL InnerSQL
 }
 
 var _ DataQuery = &commonDataQuery{}
@@ -191,7 +190,7 @@ func NewCommonDataQuery(innerSQL InnerSQL, db *gorm.DB) DataQuery {
 
 func (q *commonDataQuery) GetDatabases(ctx context.Context) (databases []string, err error) {
 	var databaseResult *server.DataQueryResult
-	if databaseResult, err = sqlQuery(ctx, q.GetInnerSQL().ToNativeSQL(innerShowDatabases), q.db); err == nil {
+	if databaseResult, err = sqlQuery(ctx, q.GetInnerSQL().ToNativeSQL(InnerShowDatabases), q.db); err == nil {
 		for _, table := range databaseResult.Items {
 			for _, item := range table.GetData() {
 				if item.Key == "Database" || item.Key == "name" {
@@ -213,7 +212,7 @@ func (q *commonDataQuery) GetDatabases(ctx context.Context) (databases []string,
 }
 
 func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string) (tables []string, err error) {
-	showTables := q.GetInnerSQL().ToNativeSQL(innerShowTables)
+	showTables := q.GetInnerSQL().ToNativeSQL(InnerShowTables)
 	if strings.Contains(showTables, "%s") {
 		showTables = fmt.Sprintf(showTables, currentDatabase)
 	}
@@ -243,21 +242,25 @@ func (q *commonDataQuery) GetTables(ctx context.Context, currentDatabase string)
 
 func (q *commonDataQuery) GetCurrentDatabase() (current string, err error) {
 	var row *sql.Row
-	if row = q.db.Raw(q.GetInnerSQL().ToNativeSQL(innerCurrentDB)).Row(); row != nil {
+	if row = q.db.Raw(q.GetInnerSQL().ToNativeSQL(InnerCurrentDB)).Row(); row != nil {
 		err = row.Scan(&current)
 	}
 	return
 }
 
-func (q *commonDataQuery) GetLabels(ctx context.Context, sql string) (metadata map[string]string) {
+func (q *commonDataQuery) GetLabels(ctx context.Context, sql string) (metadata []*server.Pair) {
+	metadata = make([]*server.Pair, 0)
 	if databaseResult, err := sqlQuery(ctx, fmt.Sprintf("explain %s", sql), q.db); err == nil {
 		if len(databaseResult.Items) != 1 {
-			metadata = make(map[string]string)
-			for _, data := range databaseResult.Items[0].Data {
-				switch data.Key {
-				case "type":
-					metadata["sql_type"] = data.Value
-				}
+			return
+		}
+		for _, data := range databaseResult.Items[0].Data {
+			switch data.Key {
+			case "type":
+				metadata = append(metadata, &server.Pair{
+					Key:   "sql_type",
+					Value: data.Value,
+				})
 			}
 		}
 	}
