@@ -82,5 +82,7 @@ services:
       interval: 3s
       timeout: 30s
       retries: 10
+    ports:
+      - 5432
 volumes:
   cache:

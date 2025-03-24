@@ -36,6 +36,7 @@ func TestInnerSQL(t *testing.T) {
 
 	innerSQLs := []string{
 		pkg.InnerSelectTable_,
+		pkg.InnerSelectTableLimit_,
 		pkg.InnerShowDatabases,
 		pkg.InnerShowTables,
 		pkg.InnerCurrentDB,

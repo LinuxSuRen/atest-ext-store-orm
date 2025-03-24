@@ -66,6 +66,10 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 	query.Sql = dbQuery.GetInnerSQL().ToNativeSQL(query.Sql)
 	result.Meta.Labels = dbQuery.GetLabels(ctx, query.Sql)
+	result.Meta.Labels = append(result.Meta.Labels, &server.Pair{
+		Key:   "_native_sql",
+		Value: query.Sql,
+	})
 
 	var dataResult *server.DataQueryResult
 	now := time.Now()
