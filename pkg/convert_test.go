@@ -1,5 +1,5 @@
 /*
-Copyright 2023 API Testing Authors.
+Copyright 2023-2025 API Testing Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@ limitations under the License.
 package pkg_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/linuxsuren/api-testing/pkg/server"
 	"github.com/linuxsuren/api-testing/pkg/testing/remote"
 	"github.com/linuxsuren/atest-ext-store-orm/pkg"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"testing"
-	"time"
 )
 
 func TestConvertToRemoteTestCase(t *testing.T) {
@@ -157,6 +158,27 @@ func TestConvertToDBHistoryTestResult(t *testing.T) {
 
 	t.Run("have testcaseResult", func(t *testing.T) {
 		result := pkg.ConvertToDBHistoryTestResult(&server.HistoryTestResult{
+			Data: &server.HistoryTestCase{
+				SuiteParam: []*server.Pair{{
+					Key:   "key",
+					Value: "value",
+				}},
+				Request: &server.Request{
+					Header: []*server.Pair{{
+						Key:   "key",
+						Value: "value",
+					}},
+				},
+				Response: &server.Response{
+					Header: []*server.Pair{{
+						Key:   "key",
+						Value: "value",
+					}},
+				},
+				SuiteSpec: &server.APISpec{
+					Kind: "kind",
+				},
+			},
 			TestCaseResult: []*server.TestCaseResult{
 				{
 					StatusCode: 200,
@@ -166,9 +188,22 @@ func TestConvertToDBHistoryTestResult(t *testing.T) {
 			},
 		})
 		assert.Equal(t, &pkg.HistoryTestResult{
-			StatusCode: 200,
-			Body:       "Test body",
-			Output:     "Test output",
+			StatusCode:       200,
+			Body:             "Test body",
+			Output:           "Test output",
+			Param:            `{"key":"value"}`,
+			Header:           `{"key":"value"}`,
+			ExpectHeader:     `{"key":"value"}`,
+			ExpectBodyFields: "{}",
+			ExpectVerify:     "[]",
+			Message:          "",
+			ExpectSchema:     "",
+			HistoryHeader:    `{}`,
+			Cookie:           `{}`,
+			Query:            `{}`,
+			Form:             `{}`,
+			SpecKind:         "kind",
+			SpecURL:          "",
 		}, result)
 	})
 }

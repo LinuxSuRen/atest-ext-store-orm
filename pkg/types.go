@@ -78,3 +78,8 @@ type HistoryTestResult struct {
 	StatusCode int32  `json:"statusCode"`
 	Output     string `json:"output"`
 }
+
+const (
+	DialectorPostgres = "postgres"
+	DialectorMySQL    = "mysql"
+)
