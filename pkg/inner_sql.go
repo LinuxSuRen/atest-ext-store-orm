@@ -25,6 +25,7 @@ type InnerSQL interface {
 const (
 	InnerSelectTable_      = "@selectTable_"
 	InnerSelectTableLimit_ = "@selectTableLImit100_"
+	InnerDescribeTable_    = "@describeTable_"
 	InnerShowDatabases     = "@showDatabases"
 	InnerShowTables        = "@showTables"
 	InnerCurrentDB         = "@currentDB"
@@ -39,14 +40,15 @@ func GetInnerSQL(dialect string) InnerSQL {
 	}
 }
 
-type mysqlDialect struct {
-}
+type mysqlDialect struct{}
 
 func (m *mysqlDialect) ToNativeSQL(query string) (sql string) {
 	if strings.HasPrefix(query, InnerSelectTable_) {
 		sql = "SELECT * FROM " + strings.ReplaceAll(query, InnerSelectTable_, "")
 	} else if strings.HasPrefix(query, InnerSelectTableLimit_) {
 		sql = "SELECT * FROM " + strings.ReplaceAll(query, InnerSelectTableLimit_, "") + " LIMIT 100"
+	} else if strings.HasPrefix(query, InnerDescribeTable_) {
+		sql = "desc " + strings.ReplaceAll(query, InnerDescribeTable_, "")
 	} else if query == InnerShowDatabases {
 		sql = "SHOW DATABASES"
 	} else if query == InnerShowTables {
@@ -59,8 +61,7 @@ func (m *mysqlDialect) ToNativeSQL(query string) (sql string) {
 	return
 }
 
-type postgresDialect struct {
-}
+type postgresDialect struct{}
 
 func (p *postgresDialect) ToNativeSQL(query string) (sql string) {
 	if strings.HasPrefix(query, InnerSelectTable_) {
