@@ -15,7 +15,7 @@ env:
 
 jobs:
   Test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -34,7 +34,7 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) final
 
   goreleaser:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.ref != 'refs/heads/master'
     steps:
       - name: Checkout
@@ -70,7 +70,7 @@ jobs:
           oras push ${{ env.REGISTRY_ALIYUN }}/linuxsuren/atest-ext-store-orm:${TAG#v} */*
 
   image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3.0.0

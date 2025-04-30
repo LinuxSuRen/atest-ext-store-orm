@@ -18,6 +18,7 @@ package pkg
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -80,7 +81,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		result.Meta.Labels = dbQuery.GetLabels(ctx, query.Sql)
 		result.Meta.Labels = append(result.Meta.Labels, &server.Pair{
 			Key:   "_native_sql",
@@ -93,6 +94,9 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
 		result.Meta.Duration = time.Since(now).String()
+
+		wg.Wait()
+		result.Meta.Labels = append(result.Meta.Labels, dataResult.Meta.Labels...)
 	}
 	return
 }
@@ -126,6 +130,13 @@ func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.Data
 	columns, err := rows.Columns()
 	if err != nil {
 		return
+	}
+
+	if columnsData, colsErr := json.Marshal(columns); colsErr == nil {
+		result.Meta.Labels = append(result.Meta.Labels, &server.Pair{
+			Key:   "_columns",
+			Value: string(columnsData),
+		})
 	}
 
 	for rows.Next() {
