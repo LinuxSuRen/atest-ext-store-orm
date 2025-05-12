@@ -93,17 +93,20 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	now := time.Now()
 	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
-		result.Meta.Duration = time.Since(now).String()
 
 		wg.Wait()
 		result.Meta.Labels = append(result.Meta.Labels, dataResult.Meta.Labels...)
+	} else {
+		wg.Wait()
 	}
+
+	result.Meta.Duration = time.Since(now).String()
 	return
 }
 
-func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.DataQueryResult, err error) {
-	rows, err := db.Raw(sql).Rows()
-	if err != nil {
+func sqlQuery(ctx context.Context, sqlText string, db *gorm.DB) (result *server.DataQueryResult, err error) {
+	var rows *sql.Rows
+	if rows, err = db.Raw(sqlText).Rows(); err != nil {
 		return
 	}
 	defer func() {
@@ -119,7 +122,7 @@ func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.Data
 	}
 
 	if rows == nil {
-		if rows, err = db.ConnPool.QueryContext(ctx, sql); err != nil {
+		if rows, err = db.ConnPool.QueryContext(ctx, sqlText); err != nil {
 			return
 		} else if rows == nil {
 			fmt.Println("no rows found")
