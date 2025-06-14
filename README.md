@@ -16,6 +16,35 @@ To use this extension in your API testing project, follow these steps:
 2. Configure the database connection settings.
 3. Integrate the extension into your API tests.
 
+## Quick MySQL Setup with TiUP Playground
+
+You can quickly set up a MySQL-compatible database using [TiUP Playground](https://docs.pingcap.com/tidb/stable/tiup-playground):
+
+1. **Install TiUP** (if not already installed):
+
+    ```sh
+    curl --proto '=https' --tlsv1.2 -sSf https://tiup.io/install.sh | sh
+    source ~/.profile
+    ```
+
+2. **Start a TiDB (MySQL-compatible) cluster:**
+
+    ```sh
+    tiup playground
+    ```
+
+    This will launch a local TiDB cluster with default settings.
+
+3. **Connect to TiDB using the MySQL client:**
+
+    ```sh
+    mysql -h 127.0.0.1 -P 4000 -u root
+    ```
+
+    Now you can create databases, tables, and run SQL queries as you would with MySQL.
+
+For more details, see the [TiUP Playground documentation](https://docs.pingcap.com/tidb/stable/tiup-playground).
+
 ## Q&A
 
 Run the command `apt-get install build-essential libsqlite3-dev` if you meet the sqlite errors.
