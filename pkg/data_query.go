@@ -91,7 +91,7 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 	var dataResult *server.DataQueryResult
 	now := time.Now()
-	if dataResult, err = sqlQuery(ctx, query.Sql, db); err == nil {
+	if dataResult, err = runMultilineSQL(ctx, query.Sql, db); err == nil {
 		result.Items = dataResult.Items
 		result.Meta.Duration = time.Since(now).String()
 
@@ -101,9 +101,19 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	return
 }
 
-func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.DataQueryResult, err error) {
-	rows, err := db.Raw(sql).Rows()
-	if err != nil {
+func runMultilineSQL(ctx context.Context, multilineSQL string, db *gorm.DB) (result *server.DataQueryResult, err error) {
+	lines := strings.Split(multilineSQL, ";")
+	for _, line := range lines {
+		if result, err = sqlQuery(ctx, line, db); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func sqlQuery(ctx context.Context, sqlText string, db *gorm.DB) (result *server.DataQueryResult, err error) {
+	var rows *sql.Rows
+	if rows, err = db.Raw(sqlText).Rows(); err != nil {
 		return
 	}
 	defer func() {
@@ -119,7 +129,7 @@ func sqlQuery(ctx context.Context, sql string, db *gorm.DB) (result *server.Data
 	}
 
 	if rows == nil {
-		if rows, err = db.ConnPool.QueryContext(ctx, sql); err != nil {
+		if rows, err = db.ConnPool.QueryContext(ctx, sqlText); err != nil {
 			return
 		} else if rows == nil {
 			fmt.Println("no rows found")
