@@ -104,6 +104,9 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 func runMultilineSQL(ctx context.Context, multilineSQL string, db *gorm.DB) (result *server.DataQueryResult, err error) {
 	lines := strings.Split(multilineSQL, ";")
 	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
 		if result, err = sqlQuery(ctx, line, db); err != nil {
 			return
 		}
