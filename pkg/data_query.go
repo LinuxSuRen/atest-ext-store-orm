@@ -52,8 +52,9 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	go func() {
 		defer wg.Done()
 		// query database and tables
-		if result.Meta.Databases, err = dbQuery.GetDatabases(ctx); err != nil {
-			log.Printf("failed to query databases: %v\n", err)
+		var innerErr error
+		if result.Meta.Databases, innerErr = dbQuery.GetDatabases(ctx); innerErr != nil {
+			log.Printf("failed to query databases: %v\n", innerErr)
 		}
 	}()
 
@@ -61,13 +62,15 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 	go func() {
 		defer wg.Done()
 		if result.Meta.CurrentDatabase = query.Key; query.Key == "" {
-			if result.Meta.CurrentDatabase, err = dbQuery.GetCurrentDatabase(); err != nil {
-				log.Printf("failed to query current database: %v\n", err)
+			var queryDBErr error
+			if result.Meta.CurrentDatabase, queryDBErr = dbQuery.GetCurrentDatabase(); queryDBErr != nil {
+				log.Printf("failed to query current database: %v\n", queryDBErr)
 			}
 		}
 
-		if result.Meta.Tables, err = dbQuery.GetTables(ctx, result.Meta.CurrentDatabase); err != nil {
-			log.Printf("failed to query tables: %v\n", err)
+		var queryTableErr error
+		if result.Meta.Tables, queryTableErr = dbQuery.GetTables(ctx, result.Meta.CurrentDatabase); err != nil {
+			log.Printf("failed to query tables: %v\n", queryTableErr)
 		}
 	}()
 
@@ -97,6 +100,8 @@ func (s *dbserver) Query(ctx context.Context, query *server.DataQuery) (result *
 
 		wg.Wait()
 		result.Meta.Labels = append(result.Meta.Labels, dataResult.Meta.Labels...)
+	} else {
+		wg.Wait()
 	}
 	return
 }
@@ -140,7 +145,8 @@ func sqlQuery(ctx context.Context, sqlText string, db *gorm.DB) (result *server.
 		}
 	}
 
-	columns, err := rows.Columns()
+	var columns []string
+	columns, err = rows.Columns()
 	if err != nil {
 		return
 	}

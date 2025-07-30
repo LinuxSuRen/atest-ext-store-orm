@@ -8,4 +8,5 @@ fi
 
 docker compose version
 docker compose -f "$file" down
-docker compose -f "$file" up --build testing --exit-code-from testing --remove-orphans
+docker compose -f "$file" build extension
+docker compose -f "$file" up --exit-code-from testing --remove-orphans
