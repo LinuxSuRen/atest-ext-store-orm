@@ -17,4 +17,6 @@ kind=orm target=greptimedb:4002 driver=greptime dbname=public atest run -p testi
 kind=orm target=tdengine:6041 driver=tdengine password=taosdata dbname=information_schema atest run -p testing-data-query.yaml
 kind=orm target=postgres driver=postgres atest run -p testing-data-query.yaml
 
+kind=orm target=mysql driver=mysql atest run -p testing-data-query-mysql.yaml
+
 cat /root/.config/atest/stores.yaml
