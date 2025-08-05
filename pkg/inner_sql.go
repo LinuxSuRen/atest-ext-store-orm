@@ -48,7 +48,7 @@ func (m *mysqlDialect) ToNativeSQL(query string) (sql string) {
 	} else if strings.HasPrefix(query, InnerSelectTableLimit_) {
 		sql = "SELECT * FROM " + strings.ReplaceAll(query, InnerSelectTableLimit_, "") + " LIMIT 100"
 	} else if strings.HasPrefix(query, InnerDescribeTable_) {
-		sql = "desc " + strings.ReplaceAll(query, InnerDescribeTable_, "")
+		sql = "SHOW FULL COLUMNS FROM " + strings.ReplaceAll(query, InnerDescribeTable_, "")
 	} else if query == InnerShowDatabases {
 		sql = "SHOW DATABASES"
 	} else if query == InnerShowTables {
