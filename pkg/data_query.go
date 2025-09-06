@@ -120,6 +120,7 @@ func runMultilineSQL(ctx context.Context, multilineSQL string, db *gorm.DB) (res
 }
 
 func sqlQuery(ctx context.Context, sqlText string, db *gorm.DB) (result *server.DataQueryResult, err error) {
+	fmt.Println("execute sql:", sqlText)
 	var rows *sql.Rows
 	if rows, err = db.Raw(sqlText).Rows(); err != nil {
 		return
@@ -301,14 +302,16 @@ func (q *commonDataQuery) GetCurrentDatabase() (current string, err error) {
 
 func (q *commonDataQuery) GetLabels(ctx context.Context, sql string) (metadata []*server.Pair) {
 	metadata = make([]*server.Pair, 0)
-	if databaseResult, err := sqlQuery(ctx, fmt.Sprintf("explain %s", sql), q.db); err == nil && len(databaseResult.Items) != 1 {
-		for _, data := range databaseResult.Items[0].Data {
-			switch data.Key {
-			case "type":
-				metadata = append(metadata, &server.Pair{
-					Key:   "sql_type",
-					Value: data.Value,
-				})
+	if !strings.Contains(sql, ";") {
+		if databaseResult, err := sqlQuery(ctx, fmt.Sprintf("explain %s", sql), q.db); err == nil && len(databaseResult.Items) != 1 {
+			for _, data := range databaseResult.Items[0].Data {
+				switch data.Key {
+				case "type":
+					metadata = append(metadata, &server.Pair{
+						Key:   "sql_type",
+						Value: data.Value,
+					})
+				}
 			}
 		}
 	}
