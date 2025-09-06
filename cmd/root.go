@@ -34,6 +34,8 @@ func NewRootCommand() (c *cobra.Command) {
 	opt.AddFlags(c.Flags())
 	c.Flags().IntVarP(&opt.historyLimit, "history-limit", "", 1000, "History record items count limit")
 	c.Flags().BoolVarP(&opt.version, "version", "", false, "Print the version then exit")
+
+	c.AddCommand(newMCPCommand())
 	return
 }
 

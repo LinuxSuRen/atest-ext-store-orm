@@ -9,12 +9,33 @@ This project provides an ORM-based database store extension for API testing, sim
 - Simplified database operations using ORM.
 - Integration with API testing frameworks.
 - Support for multiple databases (SQLite, MySQL, PostgreSQL, TDengine, etc.).
+- Database query as a MCP server
 
 ## Usage
 To use this extension in your API testing project, follow these steps:
 1. Install the necessary dependencies.
 2. Configure the database connection settings.
 3. Integrate the extension into your API tests.
+
+## MCP Server
+
+```json
+{
+  "mcpServers": {
+    "database-mcp": {
+      "name": "database-mcp",
+      "type": "stdio",
+      "description": "Database query MCP Server",
+      "isActive": true,
+      "command": "atest-store-orm",
+      "args": [
+        "mcp",
+        "--mode=stdio"
+      ]
+    }
+  }
+}
+```
 
 ## Quick MySQL Setup with TiUP Playground
 
