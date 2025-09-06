@@ -29,7 +29,7 @@ services:
       context: ..
       dockerfile: Dockerfile
       args:
-        - "GO_BUILDER=ghcr.io/linuxsuren/library/golang:1.22"
+        - "GO_BUILDER=golang:1.23"
         - "BASE_IMAGE=ghcr.io/linuxsuren/library/alpine:3.12"
         - GOPROXY=${GOPROXY}
 #    ports:
