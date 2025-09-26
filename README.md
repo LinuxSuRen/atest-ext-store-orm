@@ -30,7 +30,11 @@ To use this extension in your API testing project, follow these steps:
       "command": "atest-store-orm",
       "args": [
         "mcp",
-        "--mode=stdio"
+        "--mode=stdio",
+        "--url=192.168.123.58:33060",
+        "--username=root",
+        "--password=root",
+        "--database=test"
       ]
     }
   }
