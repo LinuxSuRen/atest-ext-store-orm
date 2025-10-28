@@ -106,7 +106,7 @@ func (o *mcpOption) runE(c *cobra.Command, args []string) (err error) {
 	case "sse":
 		handler := mcp.NewSSEHandler(func(request *http.Request) *mcp.Server {
 			return server
-		})
+		}, nil)
 		c.Println("Starting SSE server on port:", o.port)
 		err = http.ListenAndServe(fmt.Sprintf(":%d", o.port), handler)
 	case "stdio":

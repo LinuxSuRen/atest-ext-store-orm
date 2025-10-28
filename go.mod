@@ -6,7 +6,7 @@ toolchain go1.24.3
 
 require (
 	github.com/linuxsuren/api-testing v0.0.20-0.20250319020913-f5f9383e2948
-	github.com/modelcontextprotocol/go-sdk v0.3.1
+	github.com/modelcontextprotocol/go-sdk v0.7.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/taosdata/driver-go/v3 v3.6.0
@@ -44,7 +44,7 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/jsonschema-go v0.2.1-0.20250825175020-748c325cec76 // indirect
+	github.com/google/jsonschema-go v0.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
